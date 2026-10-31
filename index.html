@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PRAXIS Tickets</title>
-<meta name="theme-color" content="#0E7490">
+<meta name="theme-color" content="#0A5C73">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="PRAXIS Tickets">
@@ -13,244 +13,372 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Syne:wght@600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"></script>
 <style>
 :root{
-  --primary:#0E7490; --primary-dk:#0A5C73; --accent:#06B6D4; --bg:#EDF6FA; --surface:#FFFFFF;
-  --panel:#E8F4F8; --border:#B8DDE8; --text:#164E63; --dim:#5B8FA8;
-  --red:#DC2626; --orange:#EA580C; --amber:#D97706; --green:#059669; --grey:#64748B;
-  --radius:14px; --shadow:0 1px 2px rgba(22,78,99,.06),0 4px 16px rgba(22,78,99,.07);
+  --side:#0A5C73; --side-ink:#D6EEF5; --side-dim:#8CC3D3;
+  --primary:#0E7490; --primary-ink:#fff; --accent:#06B6D4;
+  --bg:#EDF6FA; --surface:#FFFFFF; --sunken:#F4FAFC; --line:#D3E8EF; --line-strong:#B8DDE8;
+  --text:#164E63; --dim:#5B8FA8; --faint:#8DB3C4;
+  --ok:#0E7490; --warn:#C2780A; --bad:#C2321F; --done:#2F855A;
+  --focus:0 0 0 3px rgba(6,182,212,.45);
+}
+:root[data-theme="dark"]{
+  --side:#08222C; --side-ink:#CFE8F0; --side-dim:#6E9BAA;
+  --primary:#22A6C4; --primary-ink:#04222C; --accent:#3DD3EC;
+  --bg:#0C2A35; --surface:#113542; --sunken:#0F303C; --line:#1D4A59; --line-strong:#27606F;
+  --text:#E2F2F7; --dim:#93BFCD; --faint:#5F8D9C;
+  --ok:#3DD3EC; --warn:#F0A63A; --bad:#F2735E; --done:#5FCB8E;
 }
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 "DM Sans",system-ui,sans-serif;-webkit-text-size-adjust:100%}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--text);font:15px/1.5 "DM Sans",system-ui,sans-serif;-webkit-text-size-adjust:100%}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
+:focus-visible{outline:none;box-shadow:var(--focus);border-radius:6px}
 .hidden{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
-/* top bar */
-header.top{position:sticky;top:0;z-index:20;background:var(--primary-dk);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 16px 10px;display:flex;align-items:center;gap:12px}
-.brand{font-family:"Bebas Neue",sans-serif;font-size:26px;letter-spacing:1px;line-height:1}
-.brand small{font-family:"Syne",sans-serif;font-size:12px;letter-spacing:.5px;opacity:.75;margin-left:6px;font-weight:600}
-header.top .sp{flex:1}
-.iconbtn{background:rgba(255,255,255,.12);border:0;color:#fff;width:38px;height:38px;border-radius:10px;display:grid;place-items:center}
-.iconbtn:hover{background:rgba(255,255,255,.22)}
-.avatar{width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:700;border:0;font-size:14px}
-.demo-banner{background:#FEF3C7;color:#92400E;text-align:center;font-size:13px;padding:6px 12px}
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
+aside.side{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh}
+.logo{font-family:"Bebas Neue",sans-serif;font-size:30px;letter-spacing:1.5px;line-height:1;padding:0 10px 22px;color:#fff}
+.logo span{display:block;font-family:"DM Sans";font-size:12px;letter-spacing:.2px;color:var(--side-dim);font-weight:500;margin-top:4px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:12px;border:0;background:none;color:var(--side-ink);padding:10px 12px;border-radius:8px;text-align:left;font-weight:500}
+.nav button svg{flex:none;opacity:.8}
+.nav button:hover{background:rgba(255,255,255,.06)}
+.nav button.on{background:rgba(255,255,255,.12);color:#fff}
+.nav button.on svg{opacity:1}
+.nav .count{margin-left:auto;font-size:12px;background:rgba(255,255,255,.14);padding:1px 8px;border-radius:999px}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1)}
+.side-foot button{border:0;background:none;color:var(--side-dim);text-align:left;padding:8px 12px;border-radius:8px;display:flex;align-items:center;gap:10px;font-size:14px}
+.side-foot button:hover{color:#fff;background:rgba(255,255,255,.06)}
+.who{padding:8px 12px;font-size:13px;color:var(--side-dim)}
+.who b{display:block;color:var(--side-ink);font-weight:600}
 
-/* nav */
-nav.tabs{display:flex;gap:4px;padding:12px 16px 0;max-width:1200px;margin:0 auto}
-nav.tabs button{border:0;background:none;padding:8px 14px;border-radius:10px;font-family:"Syne",sans-serif;font-weight:700;color:var(--dim)}
-nav.tabs button.on{background:var(--surface);color:var(--primary);box-shadow:var(--shadow)}
+main{min-width:0;padding:28px 36px 60px}
+.page-head{display:flex;align-items:center;gap:16px;margin-bottom:22px;flex-wrap:wrap}
+.page-head h1{font-size:24px;font-weight:700;margin:0;letter-spacing:-.2px}
+.page-head .sp{flex:1}
+.demo{background:#FEF3C7;color:#7C4A03;font-size:13px;padding:8px 14px;border-radius:8px;margin-bottom:18px}
 
-main{max-width:1200px;margin:0 auto;padding:12px 16px 100px}
+.btn{border:0;border-radius:8px;padding:9px 16px;font-weight:600;background:var(--primary);color:var(--primary-ink);display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{filter:brightness(1.08)}
+.btn.quiet{background:transparent;color:var(--primary);border:1px solid var(--line-strong)}
+.btn.danger{background:transparent;color:var(--bad);border:1px solid var(--line-strong)}
+.btn:disabled{opacity:.5;cursor:default;filter:none}
+.icon-btn{border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;width:38px;height:38px;display:grid;place-items:center;color:var(--dim)}
+.icon-btn:hover{color:var(--primary)}
+input.field,select.field,textarea.field{border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:8px 11px;width:100%}
+.search{max-width:320px}
 
-/* stats */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
-.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;text-align:left;box-shadow:var(--shadow)}
-.stat b{display:block;font-family:"Bebas Neue",sans-serif;font-size:32px;line-height:1;color:var(--primary)}
-.stat span{font-size:12px;color:var(--dim)}
-.stat.warn b{color:var(--red)}
-.stat.on{outline:2px solid var(--accent)}
-@media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+/* ---------- dashboard ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);background:var(--surface);border-radius:12px;margin-bottom:22px}
+.kpi{padding:18px 22px;border-left:1px solid var(--line)}
+.kpi:first-child{border-left:0}
+.kpi .n{font-family:"Bebas Neue",sans-serif;font-size:44px;line-height:1;letter-spacing:.5px}
+.kpi .l{font-size:13px;color:var(--dim);margin-top:6px}
+.kpi.bad .n{color:var(--bad)}
+.dash{display:grid;grid-template-columns:1.4fr 1fr;gap:22px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.panel h2{font-size:15px;margin:0 0 14px;font-weight:700}
+.panel h2 small{font-weight:400;color:var(--dim);margin-left:6px;font-size:13px}
+.hbar{display:grid;grid-template-columns:minmax(90px,170px) 1fr 34px;gap:10px;align-items:center;font-size:13px;margin:7px 0}
+.hbar .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbar .b{height:8px;background:var(--sunken);border-radius:4px;overflow:hidden}
+.hbar .b i{display:block;height:100%;background:var(--primary);border-radius:4px}
+.hbar .v{text-align:right;color:var(--dim);font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--dim);margin-top:8px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.stack{display:flex;flex-direction:column;gap:22px}
 
-/* filters */
-.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
-.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1 1 auto}
-.chips::-webkit-scrollbar{display:none}
-.chip{white-space:nowrap;border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--dim)}
-.chip.on{background:var(--primary);border-color:var(--primary);color:#fff}
-.search{flex:1 1 220px;min-width:0;border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:8px 12px}
-.btn{border:0;border-radius:10px;padding:9px 16px;font-weight:700;background:var(--primary);color:#fff}
-.btn:hover{background:var(--primary-dk)}
-.btn.ghost{background:var(--surface);color:var(--primary);border:1px solid var(--border)}
-.btn.danger{background:#fff;color:var(--red);border:1px solid #FCA5A5}
-.btn:disabled{opacity:.5;cursor:default}
+/* ---------- ticket table ---------- */
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.filters button{border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--dim)}
+.filters button.on{background:var(--text);border-color:var(--text);color:var(--bg)}
+.filters button em{font-style:normal;opacity:.7;margin-left:4px}
+.table{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.trow{display:grid;grid-template-columns:96px minmax(0,1fr) 128px 130px 130px 150px;gap:14px;align-items:center;padding:12px 18px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;color:inherit}
+.trow:first-child{border-top:0}
+button.trow:hover{background:var(--sunken)}
+.thead{font-size:12px;color:var(--dim);font-weight:600;background:var(--sunken)}
+.tno{font-variant-numeric:tabular-nums;color:var(--dim);font-size:13px;font-weight:600}
+.ttl{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tsub{font-size:13px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prio{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600}
+.prio i{width:8px;height:8px;border-radius:50%}
+.status{font-size:13px;font-weight:600}
+.st-new{color:var(--accent)} .st-open{color:var(--primary)} .st-wait{color:var(--warn)} .st-done{color:var(--done)} .st-closed{color:var(--faint)}
+.sla{display:block;font-size:12px;color:var(--dim)}
+.sla .bar{display:block;height:5px;border-radius:3px;background:var(--sunken);overflow:hidden;margin-top:5px;border:1px solid var(--line)}
+.sla .bar i{display:block;height:100%;background:var(--ok)}
+.sla.warn{color:var(--warn)} .sla.warn .bar i{background:var(--warn)}
+.sla.bad{color:var(--bad)} .sla.bad .bar i{background:var(--bad)}
+.sla.met{color:var(--done)}
+.empty{padding:48px 20px;text-align:center;color:var(--dim)}
+.empty .btn{margin-top:14px}
 
-/* ticket list */
-.list{display:flex;flex-direction:column;gap:8px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow);display:grid;grid-template-columns:4px 1fr auto;gap:12px;text-align:left;width:100%}
-.card:hover{border-color:var(--accent)}
-.card .bar{border-radius:4px}
-.card .no{font-family:"Syne",sans-serif;font-size:12px;font-weight:700;color:var(--dim)}
-.card h3{margin:2px 0 4px;font-size:15px;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
-.meta{display:flex;flex-wrap:wrap;gap:6px 10px;font-size:12px;color:var(--dim);align-items:center}
-.right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
-.badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
-.sla{font-size:11px;font-weight:700;white-space:nowrap}
-.sla.ok{color:var(--green)} .sla.risk{color:var(--amber)} .sla.breach{color:var(--red)}
-.empty{text-align:center;color:var(--dim);padding:48px 12px}
+/* ---------- ticket detail ---------- */
+.back{border:0;background:none;color:var(--dim);padding:0;margin-bottom:12px;display:inline-flex;gap:6px;align-items:center;font-size:14px}
+.back:hover{color:var(--primary)}
+.detail{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:24px;align-items:start}
+.dhead h1{font-size:22px;margin:4px 0 6px;line-height:1.3;overflow-wrap:anywhere}
+.dhead .meta{font-size:13px;color:var(--dim)}
+.timeline{margin-top:18px;display:flex;flex-direction:column}
+.ev{position:relative;padding:0 0 18px 26px}
+.ev::before{content:"";position:absolute;left:7px;top:22px;bottom:0;width:2px;background:var(--line)}
+.ev:last-child::before{display:none}
+.ev .dot{position:absolute;left:0;top:5px;width:16px;height:16px;border-radius:50%;background:var(--surface);border:2px solid var(--line-strong)}
+.ev.in .dot{border-color:var(--accent)}
+.ev.out .dot{background:var(--primary);border-color:var(--primary)}
+.ev.note .dot{border-color:var(--warn);border-style:dashed}
+.ev.sys .dot{width:10px;height:10px;left:3px;top:8px;background:var(--line-strong);border:0}
+.ev .who2{font-size:13px;color:var(--dim)}
+.ev .who2 b{color:var(--text)}
+.ev .msg{margin-top:6px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 14px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.ev.out .msg{border-color:var(--primary)}
+.ev.note .msg{background:var(--sunken);border-style:dashed}
+.ev.sys{padding-bottom:12px}
+.ev.sys .who2{font-size:13px}
+.composer{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:6px}
+.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.seg button{border:0;background:none;padding:6px 12px;font-size:13px;font-weight:600;color:var(--dim)}
+.seg button.on{background:var(--text);color:var(--bg)}
+.composer textarea{border:0;background:transparent;width:100%;resize:vertical;min-height:80px;padding:4px 2px}
+.composer textarea:focus{box-shadow:none}
+.crow{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px;margin-top:6px}
+.crow select{max-width:230px}
+.props{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 18px 16px;position:sticky;top:20px}
+.prop{padding:11px 0;border-bottom:1px solid var(--line)}
+.prop:last-child{border-bottom:0}
+.prop label,.prop .k{display:block;font-size:12px;color:var(--dim);margin-bottom:5px;font-weight:600}
+.prop .v{font-size:14px;overflow-wrap:anywhere}
+.prop .v a{color:var(--primary)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.computed{font-size:12px;color:var(--dim);margin-top:6px}
+.inline-warn{font-size:13px;color:var(--warn);margin-top:6px}
 
-/* drawer */
-.overlay{position:fixed;inset:0;background:rgba(10,40,52,.35);z-index:40}
-.drawer{position:fixed;top:0;right:0;bottom:0;width:min(620px,100%);background:var(--bg);z-index:41;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(10,40,52,.2)}
-.drawer header{background:var(--surface);border-bottom:1px solid var(--border);padding:calc(12px + env(safe-area-inset-top)) 16px 12px;display:flex;gap:10px;align-items:flex-start}
-.drawer header h2{margin:0;font-size:18px;line-height:1.3;overflow-wrap:anywhere}
-.drawer .body{flex:1;overflow-y:auto;padding:14px 16px 24px}
-.closebtn{border:0;background:var(--panel);border-radius:10px;width:36px;height:36px;flex:none;font-size:18px;color:var(--text)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--dim);font-weight:500}
-label.f input,label.f select,label.f textarea,.composer textarea{border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:8px 10px;font-size:15px;color:var(--text);width:100%}
-textarea{resize:vertical}
-.box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin:12px 0}
-.box h4{margin:0 0 8px;font-family:"Syne",sans-serif;font-size:13px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
-.desc{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}
-.kv dt{color:var(--dim)} .kv dd{margin:0;overflow-wrap:anywhere}
-.kv a{color:var(--primary)}
+/* ---------- modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(6,30,38,.45);z-index:50}
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(600px,calc(100% - 24px));max-height:calc(100% - 32px);overflow:auto;background:var(--bg);border-radius:14px;z-index:51;box-shadow:0 24px 64px rgba(6,30,38,.35)}
+.modal header{padding:18px 22px 4px;font-weight:700;font-size:18px}
+.modal form{padding:10px 22px 22px;display:flex;flex-direction:column;gap:12px}
+.modal label{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dim);font-weight:600}
+.modal .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:6px}
+.modal .acts .sp{flex:1}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 18px;border-radius:10px;z-index:60;font-size:14px;max-width:90%}
+.toast.err{background:var(--bad);color:#fff}
 
-/* timeline */
-.tl{display:flex;flex-direction:column;gap:10px}
-.msg{border-radius:12px;padding:10px 12px;font-size:14px;border:1px solid var(--border);background:var(--surface)}
-.msg .h{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--dim);margin-bottom:4px}
-.msg .h b{color:var(--text)}
-.msg .t{white-space:pre-wrap;overflow-wrap:anywhere}
-.msg.in{background:#F0F9FF;border-color:#BAE6FD}
-.msg.out{background:#ECFEFF;border-color:var(--accent);margin-left:18px}
-.msg.note{background:#FFFBEB;border-color:#FDE68A;border-style:dashed}
-.composer{background:var(--surface);border-top:1px solid var(--border);padding:10px 16px calc(10px + env(safe-area-inset-bottom))}
-.seg{display:inline-flex;background:var(--panel);border-radius:10px;padding:3px;margin-bottom:8px}
-.seg button{border:0;background:none;padding:6px 10px;border-radius:8px;font-size:13px;font-weight:700;color:var(--dim)}
-.seg button.on{background:var(--surface);color:var(--primary);box-shadow:var(--shadow)}
-.crow{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
-.crow select{border:1px solid var(--border);border-radius:10px;padding:7px 8px;background:var(--surface);font-size:13px;flex:1;min-width:150px}
-
-/* modal */
-.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,calc(100% - 24px));max-height:calc(100% - 40px);overflow:auto;background:var(--bg);border-radius:18px;z-index:51;box-shadow:0 20px 60px rgba(10,40,52,.3)}
-.modal header{padding:16px 18px 6px;font-family:"Syne",sans-serif;font-weight:700;font-size:18px}
-.modal .mbody{padding:8px 18px 18px;display:flex;flex-direction:column;gap:10px}
-.modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
-.overlay.m{z-index:50}
-
-/* clients */
-.ccard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:flex;justify-content:space-between;gap:10px;align-items:center;box-shadow:var(--shadow);text-align:left;width:100%}
-.ccard h3{margin:0;font-size:15px}
-
-.fab{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom));width:58px;height:58px;border-radius:50%;border:0;background:var(--accent);color:#fff;font-size:30px;box-shadow:0 8px 24px rgba(6,182,212,.45);z-index:30}
-.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:#fff;padding:10px 16px;border-radius:12px;z-index:60;font-size:14px;max-width:90%}
-.toast.err{background:var(--red)}
-
-/* login / setup */
-.center{min-height:70vh;display:grid;place-items:center;text-align:center;padding:20px}
-.center .panel{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px 24px;max-width:420px;box-shadow:var(--shadow)}
-.center h1{font-family:"Bebas Neue",sans-serif;font-size:44px;margin:0;color:var(--primary);letter-spacing:1px}
-.spin{width:28px;height:28px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:s 0.8s linear infinite;margin:40px auto}
+/* ---------- login ---------- */
+.gate{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--side)}
+.gate .card{background:var(--surface);border-radius:16px;padding:36px 32px;max-width:400px;width:100%}
+.gate .logo{color:var(--side);padding:0 0 6px;font-size:40px}
+.gate p{color:var(--dim);margin:0 0 22px}
+.gate .btn{width:100%;justify-content:center;padding:12px}
+.spin{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:s .8s linear infinite;margin:60px auto}
 @keyframes s{to{transform:rotate(360deg)}}
-@media(max-width:560px){
-  .grid2{grid-template-columns:1fr 1fr}
-  .card{grid-template-columns:4px 1fr}
-  .card .right{grid-column:2;flex-direction:row;align-items:center;justify-content:flex-start;flex-wrap:wrap}
-  #newBtnTop{display:none}
+
+/* ---------- mobile ---------- */
+.tabbar{display:none}
+@media (max-width:860px){
+  .shell{grid-template-columns:1fr}
+  aside.side{display:none}
+  main{padding:16px 14px calc(96px + env(safe-area-inset-bottom))}
+  .mtop{display:flex!important}
+  .page-head{margin-bottom:14px}
+  .page-head h1{font-size:20px}
+  .page-head .newbtn{display:none}
+  .search{max-width:none;order:3;flex-basis:100%}
+  .kpis{grid-template-columns:1fr 1fr}
+  .kpi{padding:14px 16px}
+  .kpi:nth-child(3){border-left:0}
+  .kpi:nth-child(n+3){border-top:1px solid var(--line)}
+  .kpi .n{font-size:36px}
+  .dash{grid-template-columns:1fr}
+  .thead{display:none}
+  .trow{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:12px 14px}
+  .trow .c-no{display:none}
+  .trow .c-type{display:none}
+  .trow .c-prio{grid-column:2;grid-row:1;justify-self:end}
+  .trow .c-status{grid-column:2;grid-row:2;justify-self:end}
+  .trow .c-sla{grid-column:1 / span 2}
+  .detail{grid-template-columns:1fr}
+  .props{position:static}
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  .tabbar button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--dim);padding:6px 0}
+  .tabbar button.on{color:var(--primary)}
+  .tabbar .plus{color:var(--primary-ink)}
+  .tabbar .plus span{width:44px;height:44px;border-radius:12px;background:var(--primary);display:grid;place-items:center;margin-top:-2px}
+  .modal .grid2{grid-template-columns:1fr}
 }
-@media(min-width:561px){.fab{display:none}}
+.mtop{display:none;align-items:center;gap:10px;margin:-2px 0 14px}
+.mtop .logo{color:var(--text);padding:0;font-size:24px}
+.mtop .sp{flex:1}
 </style>
 </head>
 <body>
-<header class="top">
-  <div class="brand">PRAXIS<small>TICKETS</small></div>
-  <div class="sp"></div>
-  <button class="btn" id="newBtnTop" style="background:var(--accent)">+ Νέο ticket</button>
-  <button class="iconbtn" id="refreshBtn" title="Ανανέωση" aria-label="Ανανέωση">
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
-  </button>
-  <button class="avatar" id="meBtn" title="Λογαριασμός">·</button>
-</header>
-<div id="demoBanner" class="demo-banner hidden">Λειτουργία επίδειξης — τα δεδομένα δεν αποθηκεύονται. Συμπλήρωσε το config.js για σύνδεση με SharePoint.</div>
-<nav class="tabs" id="tabs">
-  <button data-v="tickets" class="on">Tickets</button>
-  <button data-v="clients">Πελάτες</button>
-</nav>
-<main id="main"><div class="spin"></div></main>
-<button class="fab" id="fab" aria-label="Νέο ticket">+</button>
+<div id="root"><div class="spin"></div></div>
 <div id="layer"></div>
 
 <script>
 "use strict";
 const CFG = window.PRAXIS_CONFIG || {};
-const DEMO = !CFG.clientId || !CFG.tenantId;
-const STATUSES = ["Νέο","Σε εξέλιξη","Αναμονή πελάτη","Επιλύθηκε","Κλειστό"];
-const OPEN = ["Νέο","Σε εξέλιξη","Αναμονή πελάτη"];
+const DEMO = !CFG.clientId || !CFG.tenantId || /[?&]demo\b/.test(location.search);
+
+/* ================= vocabulary ================= */
+const STATUSES = ["Νέο","Ανατέθηκε","Σε εξέλιξη","Αναμονή πελάτη","Αναμονή προμηθευτή","Επιλύθηκε","Κλειστό"];
+const OPEN = ["Νέο","Ανατέθηκε","Σε εξέλιξη","Αναμονή πελάτη","Αναμονή προμηθευτή"];
+const ST_CLASS = {"Νέο":"st-new","Ανατέθηκε":"st-open","Σε εξέλιξη":"st-open","Αναμονή πελάτη":"st-wait","Αναμονή προμηθευτή":"st-wait","Επιλύθηκε":"st-done","Κλειστό":"st-closed"};
 const PRIORITIES = ["P1 Κρίσιμο","P2 Υψηλό","P3 Κανονικό","P4 Χαμηλό"];
+const PRIO_COLOR = {"P1 Κρίσιμο":"var(--bad)","P2 Υψηλό":"var(--warn)","P3 Κανονικό":"var(--primary)","P4 Χαμηλό":"var(--faint)"};
+const TYPES = ["Περιστατικό","Αίτημα υπηρεσίας","Πρόβλημα","Αλλαγή"];
+const LEVELS = ["Υψηλή","Μεσαία","Χαμηλή"];
+const IMPACT_HINT = {"Υψηλή":"όλη η επιχείρηση ή πολλοί χρήστες","Μεσαία":"ένα τμήμα ή μια ομάδα","Χαμηλή":"ένας χρήστης"};
+const URGENCY_HINT = {"Υψηλή":"η δουλειά έχει σταματήσει","Μεσαία":"δυσκολεύει τη δουλειά","Χαμηλή":"μπορεί να περιμένει"};
+const MATRIX = { "Υψηλή":{"Υψηλή":"P1 Κρίσιμο","Μεσαία":"P2 Υψηλό","Χαμηλή":"P3 Κανονικό"},
+                 "Μεσαία":{"Υψηλή":"P2 Υψηλό","Μεσαία":"P3 Κανονικό","Χαμηλή":"P4 Χαμηλό"},
+                 "Χαμηλή":{"Υψηλή":"P3 Κανονικό","Μεσαία":"P4 Χαμηλό","Χαμηλή":"P4 Χαμηλό"} };
 const CATEGORIES = ["Δίκτυο","Email / M365","Server","Υπολογιστής","Εκτυπωτής","VoIP","Ασφάλεια","Λογισμικό","Άλλο"];
 const SOURCES = ["Email","Τηλέφωνο","Web"];
-const TIERS = Object.keys(CFG.tierSla || {"Χωρίς σύμβαση":0,"Starter":8,"Business":4,"Professional":2,"Enterprise":2});
-const DIR = {IN:"Από πελάτη", OUT:"Απάντηση προς πελάτη", NOTE:"Εσωτερική σημείωση"};
-const STATUS_COLOR = {"Νέο":["#CFFAFE","#0E7490"],"Σε εξέλιξη":["#E0F2FE","#0369A1"],"Αναμονή πελάτη":["#FEF3C7","#B45309"],"Επιλύθηκε":["#D1FAE5","#047857"],"Κλειστό":["#F1F5F9","#475569"]};
-const PRIO_COLOR = {"P1 Κρίσιμο":"#DC2626","P2 Υψηλό":"#EA580C","P3 Κανονικό":"#0E7490","P4 Χαμηλό":"#94A3B8"};
+const TIERS = Object.keys(CFG.tierSla || {"Χωρίς σύμβαση":0});
+const DIR = {IN:"Από πελάτη", OUT:"Απάντηση προς πελάτη", NOTE:"Εσωτερική σημείωση", SYS:"Ιστορικό"};
 const TECHS = CFG.technicians || [];
 const PREFIX = CFG.ticketPrefix || "PRX-";
+const SLA_M = CFG.slaMatrix || {"P1 Κρίσιμο":{response:60,resolve:240},"P2 Υψηλό":{response:120,resolve:480},"P3 Κανονικό":{response:240,resolve:960},"P4 Χαμηλό":{response:480,resolve:2400}};
+const BH = CFG.businessHours || {start:9,end:17,days:[1,2,3,4,5]};
+const HOLI = new Set(CFG.holidays || []);
 
-const S = { view:"tickets", filter:"open", q:"", tickets:[], clients:[], me:{name:"",email:""}, open:null, comments:[] };
+const S = { view:"dash", filter:"open", q:"", tickets:[], clients:[], me:{name:"",email:""}, open:null, comments:[] };
 const $ = (s, r=document) => r.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ticketNo = id => PREFIX + String(id).padStart(5,"0");
 const nowIso = () => new Date().toISOString();
 
-/* ---------------- time helpers ---------------- */
+/* ================= business-hours time (Europe/Athens) ================= */
+const TZF = new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Athens",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:"h23"});
+function wall(d){ const p = Object.fromEntries(TZF.formatToParts(d).map(x=>[x.type,x.value])); return new Date(Date.UTC(+p.year, +p.month-1, +p.day, +p.hour, +p.minute, +p.second)); }
+function unwall(w){ let t = w.getTime(); for(let i=0;i<2;i++){ const off = wall(new Date(t)).getTime() - t; t = w.getTime() - off; } return new Date(t); }
+const dayKey = w => w.toISOString().slice(0,10);
+const isWorkDay = w => BH.days.includes(w.getUTCDay()) && !HOLI.has(dayKey(w));
+const atHour = (w,h) => new Date(Date.UTC(w.getUTCFullYear(), w.getUTCMonth(), w.getUTCDate(), h));
+const nextDayStart = w => atHour(new Date(w.getTime() + 86400000), BH.start);
+function addBusiness(startUtc, minutes){
+  let w = wall(new Date(startUtc)), left = minutes;
+  for(let guard=0; guard<400; guard++){
+    if(!isWorkDay(w)){ w = nextDayStart(w); continue; }
+    const open = atHour(w,BH.start), close = atHour(w,BH.end);
+    if(w < open){ w = open; continue; }
+    if(w >= close){ w = nextDayStart(w); continue; }
+    const avail = (close - w) / 60000;
+    if(left <= avail) return unwall(new Date(w.getTime() + left*60000)).toISOString();
+    left -= avail; w = nextDayStart(w);
+  }
+  return null;
+}
+function businessBetween(aUtc, bUtc){
+  let a = wall(new Date(aUtc)), b = wall(new Date(bUtc));
+  if(b <= a) return 0;
+  let total = 0, d = atHour(a, 0);
+  for(let guard=0; guard<400 && d < b; guard++){
+    if(isWorkDay(d)){
+      const s = Math.max(atHour(d,BH.start), a), e = Math.min(atHour(d,BH.end), b);
+      if(e > s) total += (e - s) / 60000;
+    }
+    d = new Date(d.getTime() + 86400000);
+  }
+  return total;
+}
+const fmtMin = m => { m = Math.round(Math.abs(m)); const h = Math.floor(m/60), r = m%60; if(h >= 16) return Math.round(h/8) + " εργ. ημ."; return h ? (r ? `${h}ω ${r}λ` : `${h}ω`) : `${r}λ`; };
+
+/* ================= SLA ================= */
+function clientOf(t){ return S.clients.find(c => c.name === t.client); }
+function slaTargets(tier, clientSla, priority){
+  if(!tier || tier === "Χωρίς σύμβαση") return null;
+  const m = SLA_M[priority] || SLA_M["P3 Κανονικό"];
+  const cap = +clientSla > 0 ? +clientSla * 60 : (CFG.tierSla?.[tier] || 0) * 60;
+  return { response: cap > 0 ? Math.min(m.response, cap) : m.response, resolve: m.resolve };
+}
+function dueDates(createdIso, tier, clientSla, priority){
+  const tg = slaTargets(tier, clientSla, priority);
+  if(!tg) return { due:"", resolveDue:"" };
+  return { due: addBusiness(createdIso, tg.response), resolveDue: addBusiness(createdIso, tg.resolve) };
+}
+function slaState(t){
+  if(t.status === "Κλειστό" || t.status === "Επιλύθηκε"){
+    if(!t.resolveDue) return null;
+    const late = t.resolved && new Date(t.resolved) > new Date(t.resolveDue);
+    return { cls: late ? "bad" : "met", label: late ? "Επιλύθηκε εκτός SLA" : "Επιλύθηκε εντός SLA", pct: 100, final:true };
+  }
+  const phase = !t.firstResp ? "response" : "resolve";
+  const due = phase === "response" ? t.due : t.resolveDue;
+  if(!due) return null;
+  const total = businessBetween(t.created, due) || 1;
+  const used = businessBetween(t.created, nowIso());
+  const pct = Math.min(100, Math.round(used / total * 100));
+  const left = total - used;
+  const what = phase === "response" ? "απόκριση" : "επίλυση";
+  if(new Date(due) < new Date()) return { cls:"bad", label:`${what}: έληξε πριν ${fmtMin(businessBetween(due, nowIso()))}`, pct:100, breach:true };
+  return { cls: pct >= 75 ? "warn" : "", label:`${what}: σε ${fmtMin(left)}`, pct, risk: pct >= 75 };
+}
+
+/* ================= formatting ================= */
 function ago(iso){
   if(!iso) return "";
   const m = Math.round((Date.now() - new Date(iso)) / 60000);
-  if(m < 1) return "τώρα"; if(m < 60) return m + "λ πριν";
-  const h = Math.round(m/60); if(h < 24) return h + "ω πριν";
-  const d = Math.round(h/24); if(d < 30) return d + "ημ πριν";
+  if(m < 1) return "μόλις τώρα"; if(m < 60) return `πριν ${m} λεπτά`;
+  const h = Math.round(m/60); if(h < 24) return h === 1 ? "πριν 1 ώρα" : `πριν ${h} ώρες`;
+  const d = Math.round(h/24); if(d < 30) return d === 1 ? "χθες" : `πριν ${d} ημέρες`;
   return new Date(iso).toLocaleDateString("el-GR");
 }
-function dur(ms){
-  const m = Math.abs(Math.round(ms/60000)); const h = Math.floor(m/60), mm = m%60;
-  if(h >= 48) return Math.round(h/24) + "ημ"; return h ? `${h}ω ${mm}λ` : `${mm}λ`;
-}
-function fmt(iso){ return iso ? new Date(iso).toLocaleString("el-GR",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"}) : "—"; }
-function sla(t){
-  if(t.status !== "Νέο" || !t.due) return null;
-  const left = new Date(t.due) - Date.now();
-  if(left < 0) return {cls:"breach", txt:"SLA έληξε " + dur(left)};
-  if(left < 3600000) return {cls:"risk", txt:"SLA σε " + dur(left)};
-  return {cls:"ok", txt:"SLA σε " + dur(left)};
-}
+const fmt = iso => iso ? new Date(iso).toLocaleString("el-GR",{timeZone:"Europe/Athens",day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"}) : "—";
 
-/* ---------------- data mapping ---------------- */
+/* ================= data mapping ================= */
 function fromTicket(it){
   const f = it.fields || {};
-  return { id:+it.id, no:f.TicketNo || ticketNo(it.id), title:f.Title||"(χωρίς θέμα)", status:f.Status||"Νέο", priority:f.Priority||"P3 Κανονικό",
-    category:f.Category||"", client:f.ClientName||"", tier:f.Tier||"", reqName:f.RequesterName||"", reqEmail:f.RequesterEmail||"",
-    desc:f.Description||"", tech:f.Technician||"", source:f.Source||"", due:f.DueDate||null, resolved:f.ResolvedDate||null,
-    firstResp:f.FirstResponse||null, last:f.LastActivity||f.Modified||f.Created, created:f.Created, modified:f.Modified };
+  return { id:+it.id, no:f.TicketNo || ticketNo(it.id), title:f.Title || "(χωρίς θέμα)", status:f.Status || "Νέο",
+    priority:f.Priority || "P3 Κανονικό", type:f.TicketType || "Περιστατικό", impact:f.Impact || "Μεσαία", urgency:f.Urgency || "Μεσαία",
+    prioReason:f.PriorityReason || "", category:f.Category || "", client:f.ClientName || "", tier:f.Tier || "",
+    reqName:f.RequesterName || "", reqEmail:f.RequesterEmail || "", desc:f.Description || "", tech:f.Technician || "",
+    source:f.Source || "", due:f.DueDate || null, resolveDue:f.ResolveDue || null, resolved:f.ResolvedDate || null,
+    firstResp:f.FirstResponse || null, last:f.LastActivity || f.Modified || f.Created, created:f.Created, modified:f.Modified };
 }
-const T_MAP = {title:"Title",no:"TicketNo",status:"Status",priority:"Priority",category:"Category",client:"ClientName",tier:"Tier",reqName:"RequesterName",
-  reqEmail:"RequesterEmail",desc:"Description",tech:"Technician",source:"Source",due:"DueDate",resolved:"ResolvedDate",firstResp:"FirstResponse",last:"LastActivity"};
+const T_MAP = {title:"Title",no:"TicketNo",status:"Status",priority:"Priority",type:"TicketType",impact:"Impact",urgency:"Urgency",
+  prioReason:"PriorityReason",category:"Category",client:"ClientName",tier:"Tier",reqName:"RequesterName",reqEmail:"RequesterEmail",
+  desc:"Description",tech:"Technician",source:"Source",due:"DueDate",resolveDue:"ResolveDue",resolved:"ResolvedDate",
+  firstResp:"FirstResponse",last:"LastActivity",slaAlerted:"SLAAlerted",resolveAlerted:"ResolveAlerted"};
 function toFields(obj, map){ const o = {}; for(const k in obj) if(map[k]) o[map[k]] = obj[k] === "" ? null : obj[k]; return o; }
-function fromClient(it){ const f = it.fields||{}; return { id:+it.id, name:f.Title||"", domain:f.Domain||"", tier:f.Tier||"Χωρίς σύμβαση", sla:f.SLAHours ?? "", tech:f.DefaultTechnician||"", phone:f.Phone||"", notes:f.Notes||"" }; }
+function fromClient(it){ const f = it.fields || {}; return { id:+it.id, name:f.Title || "", domain:f.Domain || "", tier:f.Tier || "Χωρίς σύμβαση", sla:f.SLAHours ?? "", tech:f.DefaultTechnician || "", phone:f.Phone || "", notes:f.Notes || "" }; }
 const C_MAP = {name:"Title",domain:"Domain",tier:"Tier",sla:"SLAHours",tech:"DefaultTechnician",phone:"Phone",notes:"Notes"};
-function fromComment(it){ const f = it.fields||{}; return { id:+it.id, ref:+f.TicketRef, body:f.Body||"", dir:f.Direction||DIR.NOTE, author:f.AuthorName||"", sent:!!f.Sent, created:f.Created }; }
+function fromComment(it){ const f = it.fields || {}; return { id:+it.id, ref:+f.TicketRef, body:f.Body || "", dir:f.Direction || DIR.NOTE, author:f.AuthorName || "", sent:!!f.Sent, created:f.Created }; }
 
-/* ---------------- backend: Microsoft Graph ---------------- */
+/* ================= backend: Microsoft Graph ================= */
 const SCOPES = ["User.Read","Sites.ReadWrite.All"];
-const SETUP_SCOPES = ["Sites.Manage.All"];
-let msal = null, account = null, siteId = null;
-
+let msalApp = null, account = null, siteId = null;
 async function initAuth(){
-  msal = new msalBrowser.PublicClientApplication({
+  msalApp = new window.msal.PublicClientApplication({
     auth:{ clientId:CFG.clientId, authority:"https://login.microsoftonline.com/" + CFG.tenantId, redirectUri: location.origin + location.pathname },
-    cache:{ cacheLocation:"localStorage" }
-  });
-  await msal.initialize();
-  const r = await msal.handleRedirectPromise();
-  account = r?.account || msal.getAllAccounts()[0] || null;
-  if(account) msal.setActiveAccount(account);
+    cache:{ cacheLocation:"localStorage" } });
+  await msalApp.initialize();
+  const r = await msalApp.handleRedirectPromise();
+  account = r?.account || msalApp.getAllAccounts()[0] || null;
+  if(account) msalApp.setActiveAccount(account);
 }
 async function token(scopes = SCOPES){
-  try { return (await msal.acquireTokenSilent({ scopes, account })).accessToken; }
-  catch(e){ await msal.acquireTokenRedirect({ scopes, account }); throw new Error("redirect"); }
+  try { return (await msalApp.acquireTokenSilent({ scopes, account })).accessToken; }
+  catch(e){ await msalApp.acquireTokenRedirect({ scopes, account }); throw new Error("redirect"); }
 }
-async function g(path, opts = {}, scopes){
+async function g(path, opts = {}){
   const url = path.startsWith("http") ? path : "https://graph.microsoft.com/v1.0" + path;
-  const r = await fetch(url, { ...opts, headers:{ Authorization:"Bearer " + await token(scopes), "Content-Type":"application/json",
-    Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly", ...(opts.headers||{}) } });
-  if(!r.ok){ let m = r.status + ""; try { m = (await r.json()).error.message; } catch(_){} const e = new Error(m); e.status = r.status; throw e; }
+  const r = await fetch(url, { ...opts, headers:{ Authorization:"Bearer " + await token(), "Content-Type":"application/json",
+    Prefer:"HonorNonIndexedQueriesWarningMayFailRandomly", ...(opts.headers || {}) } });
+  if(!r.ok){ let m = String(r.status); try { m = (await r.json()).error.message; } catch(_){} const e = new Error(m); e.status = r.status; throw e; }
   return r.status === 204 ? null : r.json();
 }
-async function allItems(list, query=""){
+async function allItems(list, query = ""){
   let url = `/sites/${siteId}/lists/${list}/items?expand=fields&$top=500${query}`, out = [];
   while(url){ const d = await g(url); out = out.concat(d.value); url = d["@odata.nextLink"]; }
   return out;
@@ -259,17 +387,13 @@ const Graph = {
   async start(){
     await initAuth();
     if(!account) return "login";
-    S.me = { name: account.name || account.username, email: (account.username||"").toLowerCase() };
+    S.me = { name: account.name || account.username, email: (account.username || "").toLowerCase() };
     siteId = (await g(`/sites/${CFG.siteHost}:${CFG.sitePath}`)).id;
-    try { await g(`/sites/${siteId}/lists/Tickets?$select=id`); } catch(e){ if(e.status === 404) return "setup"; throw e; }
     return "ok";
   },
-  login(){ return msal.loginRedirect({ scopes:SCOPES }); },
-  logout(){ return msal.logoutRedirect({ account }); },
-  async load(){
-    const [t, c] = await Promise.all([ allItems("Tickets"), allItems("TicketClients") ]);
-    S.tickets = t.map(fromTicket); S.clients = c.map(fromClient);
-  },
+  login(){ return msalApp.loginRedirect({ scopes:SCOPES }); },
+  logout(){ return msalApp.logoutRedirect({ account }); },
+  async load(){ const [t, c] = await Promise.all([allItems("Tickets"), allItems("TicketClients")]); S.tickets = t.map(fromTicket); S.clients = c.map(fromClient); },
   async comments(id){ return (await allItems("TicketComments", `&$filter=fields/TicketRef eq ${id}`)).map(fromComment); },
   async createTicket(obj){
     const it = await g(`/sites/${siteId}/lists/Tickets/items`, { method:"POST", body:JSON.stringify({ fields: toFields(obj, T_MAP) }) });
@@ -287,331 +411,525 @@ const Graph = {
     if(obj.id){ await g(`/sites/${siteId}/lists/TicketClients/items/${obj.id}/fields`, { method:"PATCH", body:JSON.stringify(f) }); return obj; }
     return fromClient(await g(`/sites/${siteId}/lists/TicketClients/items`, { method:"POST", body:JSON.stringify({ fields:f }) }));
   },
-  async deleteClient(id){ await g(`/sites/${siteId}/lists/TicketClients/items/${id}`, { method:"DELETE" }); },
-  async setup(){
-    const txt = (name, extra={}) => ({ name, text:{}, ...extra });
-    const note = name => ({ name, text:{ allowMultipleLines:true, linesForEditing:8, textType:"plain" } });
-    const choice = (name, choices, def) => ({ name, choice:{ choices, displayAs:"dropDownMenu", allowTextEntry:false }, defaultValue:{ value:def } });
-    const dt = name => ({ name, dateTime:{ format:"dateTime" } });
-    const lists = {
-      TicketClients:[ txt("Domain"), choice("Tier", TIERS, "Χωρίς σύμβαση"), { name:"SLAHours", number:{} }, txt("DefaultTechnician"), txt("Phone"), note("Notes") ],
-      Tickets:[ txt("TicketNo",{indexed:true}), choice("Status", STATUSES, "Νέο"), choice("Priority", PRIORITIES, "P3 Κανονικό"),
-        choice("Category", CATEGORIES, "Άλλο"), txt("ClientName"), txt("Tier"), txt("RequesterName"), txt("RequesterEmail"), note("Description"),
-        txt("Technician"), choice("Source", SOURCES, "Email"), dt("DueDate"), dt("FirstResponse"), dt("ResolvedDate"), dt("LastActivity"),
-        { name:"SLAAlerted", boolean:{} }, txt("ConversationId") ],
-      TicketComments:[ { name:"TicketRef", number:{}, indexed:true }, note("Body"), choice("Direction", Object.values(DIR), DIR.NOTE), txt("AuthorName"), { name:"Sent", boolean:{} } ]
-    };
-    for(const [name, columns] of Object.entries(lists)){
-      try { await g(`/sites/${siteId}/lists/${name}?$select=id`); continue; } catch(e){ if(e.status !== 404) throw e; }
-      await g(`/sites/${siteId}/lists`, { method:"POST", body:JSON.stringify({ displayName:name, columns, list:{ template:"genericList" } }) }, SETUP_SCOPES);
-    }
-  }
+  async deleteClient(id){ await g(`/sites/${siteId}/lists/TicketClients/items/${id}`, { method:"DELETE" }); }
 };
 
-/* ---------------- backend: demo ---------------- */
+/* ================= backend: demo ================= */
 const Demo = (() => {
   const h = x => new Date(Date.now() - x*3600000).toISOString();
   const clients = [
-    { id:1, name:"Λογιστικό Γραφείο Παπαδόπουλος", domain:"papadopoulos-logistiki.gr", tier:"Business", sla:4, tech:"adamis@praxisit.gr", phone:"210 0000001", notes:"" },
-    { id:2, name:"Ιατρείο Κ. Νικολάου", domain:"iatreio-nikolaou.gr", tier:"Starter", sla:8, tech:"adamis@praxisit.gr", phone:"210 0000002", notes:"" },
-    { id:3, name:"Alfa Logistics ΑΕ", domain:"alfalogistics.gr", tier:"Professional", sla:2, tech:"adamis@praxisit.gr", phone:"210 0000003", notes:"FortiGate 60F, 3CX" }
+    { id:1, name:"Λογιστικό Γραφείο Παπαδόπουλος", domain:"papadopoulos-logistiki.gr", tier:"Business", sla:4, tech:"adamis@praxisit.gr", phone:"210 000 0001", notes:"" },
+    { id:2, name:"Ιατρείο Κ. Νικολάου", domain:"iatreio-nikolaou.gr", tier:"Starter", sla:8, tech:"adamis@praxisit.gr", phone:"210 000 0002", notes:"" },
+    { id:3, name:"Alfa Logistics ΑΕ", domain:"alfalogistics.gr", tier:"Professional", sla:2, tech:"adamis@praxisit.gr", phone:"210 000 0003", notes:"FortiGate 60F, 3CX" },
+    { id:4, name:"Κάβα Μαρίνος", domain:"kavamarinos.gr", tier:"Χωρίς σύμβαση", sla:0, tech:"", phone:"", notes:"" }
   ];
-  const tk = (id, title, status, priority, ci, cat, hrs, extra={}) => ({ id, no:ticketNo(id), title, status, priority, category:cat, client:clients[ci].name, tier:clients[ci].tier,
-    reqName:["Μαρία Κ.","Γιώργος Π.","Ελένη Δ."][id%3], reqEmail:`user${id}@${clients[ci].domain}`, desc:"Περιγραφή αιτήματος από το email του πελάτη.\n\nΕυχαριστώ.",
-    tech:"adamis@praxisit.gr", source:"Email", due:new Date(Date.now() - hrs*3600000 + clients[ci].sla*3600000).toISOString(), created:h(hrs), last:h(Math.max(0,hrs-1)), ...extra });
+  const mk = (id, title, status, impact, urgency, ci, cat, type, hrs, extra={}) => {
+    const c = clients[ci], prio = MATRIX[impact][urgency], created = h(hrs), dd = dueDates(created, c.tier, c.sla, prio);
+    return { id, no:ticketNo(id), title, status, priority:prio, impact, urgency, type, category:cat, client:c.name, tier:c.tier,
+      reqName:["Μαρία Κωνσταντίνου","Γιώργος Πετρίδης","Ελένη Δημητρίου"][id%3], reqEmail:`user${id}@${c.domain}`,
+      desc:"Περιγραφή του αιτήματος όπως ήρθε από τον πελάτη.", tech:"adamis@praxisit.gr", source:"Email",
+      due:dd.due, resolveDue:dd.resolveDue, created, last:h(Math.max(0, hrs-1)), prioReason:"", ...extra };
+  };
   const tickets = [
-    tk(12,"Δεν συνδέεται το VPN από το σπίτι","Νέο","P2 Υψηλό",2,"Δίκτυο",1.5),
-    tk(11,"Ο εκτυπωτής του λογιστηρίου δεν εκτυπώνει","Νέο","P3 Κανονικό",0,"Εκτυπωτής",4.6),
-    tk(10,"Αλλαγή κωδικού email για νέο υπάλληλο","Σε εξέλιξη","P3 Κανονικό",0,"Email / M365",20,{firstResp:h(19)}),
-    tk(9,"Τηλέφωνο υποδοχής χωρίς ήχο","Αναμονή πελάτη","P2 Υψηλό",2,"VoIP",30,{firstResp:h(29),source:"Τηλέφωνο"}),
-    tk(8,"Αργός υπολογιστής ιατρείου","Επιλύθηκε","P4 Χαμηλό",1,"Υπολογιστής",72,{firstResp:h(70),resolved:h(24)}),
-    tk(7,"Ρύθμιση backup στον server","Κλειστό","P3 Κανονικό",2,"Server",200,{firstResp:h(198),resolved:h(150)})
+    mk(14,"Δεν συνδέεται το VPN από το σπίτι","Νέο","Μεσαία","Υψηλή",2,"Δίκτυο","Περιστατικό",0.6),
+    mk(13,"Πέφτει το internet στο λογιστήριο","Ανατέθηκε","Υψηλή","Υψηλή",0,"Δίκτυο","Περιστατικό",2.2),
+    mk(12,"Νέος λογαριασμός email για υπάλληλο","Σε εξέλιξη","Χαμηλή","Μεσαία",0,"Email / M365","Αίτημα υπηρεσίας",26,{firstResp:h(25)}),
+    mk(11,"Τηλέφωνο υποδοχής χωρίς ήχο","Αναμονή πελάτη","Μεσαία","Μεσαία",2,"VoIP","Περιστατικό",30,{firstResp:h(29),source:"Τηλέφωνο"}),
+    mk(10,"Αντικατάσταση δίσκου στον server","Αναμονή προμηθευτή","Μεσαία","Χαμηλή",2,"Server","Αλλαγή",70,{firstResp:h(69)}),
+    mk(9,"Ο εκτυπωτής δεν εκτυπώνει","Νέο","Χαμηλή","Μεσαία",3,"Εκτυπωτής","Περιστατικό",5),
+    mk(8,"Αργός υπολογιστής ιατρείου","Επιλύθηκε","Χαμηλή","Χαμηλή",1,"Υπολογιστής","Περιστατικό",96,{firstResp:h(94),resolved:h(30)}),
+    mk(7,"Επαναλαμβανόμενες αποσυνδέσεις Wi-Fi","Κλειστό","Μεσαία","Μεσαία",0,"Δίκτυο","Πρόβλημα",240,{firstResp:h(238),resolved:h(150)}),
+    mk(6,"Ρύθμιση backup στον server","Κλειστό","Μεσαία","Χαμηλή",2,"Server","Αίτημα υπηρεσίας",300,{firstResp:h(299),resolved:h(260)})
   ];
   const comments = [
-    { id:1, ref:9, dir:DIR.IN, author:"Ελένη Δ.", body:"Από το πρωί το τηλέφωνο στην υποδοχή δεν έχει ήχο.", created:h(30) },
-    { id:2, ref:9, dir:DIR.OUT, author:"Reinaldo Dhami", body:"Καλησπέρα, κάναμε επανεκκίνηση του extension 101 απομακρυσμένα. Μπορείτε να δοκιμάσετε και να μας πείτε;", created:h(29), sent:true },
-    { id:3, ref:9, dir:DIR.NOTE, author:"Reinaldo Dhami", body:"Αν συνεχίσει, αλλαγή καλωδίου PoE στη θύρα 14.", created:h(29) }
+    { id:1, ref:11, dir:DIR.IN, author:"Ελένη Δημητρίου", body:"Από το πρωί το τηλέφωνο στην υποδοχή δεν έχει ήχο.", created:h(30) },
+    { id:2, ref:11, dir:DIR.SYS, author:"Reinaldo Dhami", body:"Κατάσταση: Νέο → Σε εξέλιξη", created:h(29) },
+    { id:3, ref:11, dir:DIR.OUT, author:"Reinaldo Dhami", body:"Καλησπέρα, κάναμε επανεκκίνηση του εσωτερικού 101 απομακρυσμένα. Μπορείτε να δοκιμάσετε και να μας πείτε;", created:h(29), sent:true },
+    { id:4, ref:11, dir:DIR.NOTE, author:"Reinaldo Dhami", body:"Αν συνεχίσει, αλλαγή καλωδίου PoE στη θύρα 14.", created:h(28.9) },
+    { id:5, ref:11, dir:DIR.SYS, author:"Reinaldo Dhami", body:"Κατάσταση: Σε εξέλιξη → Αναμονή πελάτη", created:h(28.9) }
   ];
-  let nextT = 13, nextC = 4, nextCl = 4;
+  let nT = 15, nC = 6, nCl = 5;
   return {
     async start(){ S.me = { name:"Reinaldo Dhami", email:"adamis@praxisit.gr" }; return "ok"; },
     async load(){ S.tickets = structuredClone(tickets); S.clients = structuredClone(clients); },
     async comments(id){ return comments.filter(c => c.ref === id).map(c => ({...c})); },
-    async createTicket(o){ const t = { ...o, id:nextT, no:ticketNo(nextT), created:nowIso() }; nextT++; tickets.unshift(t); return {...t}; },
+    async createTicket(o){ const t = { ...o, id:nT, no:ticketNo(nT), created:o.created || nowIso() }; nT++; tickets.unshift(t); return {...t}; },
     async updateTicket(id, o){ Object.assign(tickets.find(t => t.id === id), o); },
-    async addComment(c){ const x = { ...c, id:nextC++, created:nowIso(), sent:c.dir === DIR.OUT }; comments.push(x); return {...x}; },
-    async saveClient(o){ if(o.id){ Object.assign(clients.find(c => c.id === o.id), o); return o; } const c = { ...o, id:nextCl++ }; clients.push(c); return {...c}; },
+    async addComment(c){ const x = { ...c, id:nC++, created:nowIso(), sent:c.dir === DIR.OUT }; comments.push(x); return {...x}; },
+    async saveClient(o){ if(o.id){ Object.assign(clients.find(c => c.id === o.id), o); return o; } const c = { ...o, id:nCl++ }; clients.push(c); return {...c}; },
     async deleteClient(id){ clients.splice(clients.findIndex(c => c.id === id), 1); },
-    login(){}, logout(){ location.reload(); }, async setup(){}
+    login(){}, logout(){ location.reload(); }
   };
 })();
 const API = DEMO ? Demo : Graph;
 
-/* ---------------- UI helpers ---------------- */
-function toast(msg, err){ document.querySelectorAll(".toast").forEach(x => x.remove()); const d = document.createElement("div"); d.className = "toast" + (err ? " err" : ""); d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), err ? 5000 : 2500); }
-async function guard(fn){ try { return await fn(); } catch(e){ if(e.message !== "redirect"){ console.error(e); toast("Σφάλμα: " + e.message, true); } } }
+/* ================= helpers ================= */
+function toast(msg, err){ document.querySelectorAll(".toast").forEach(x => x.remove()); const d = document.createElement("div"); d.className = "toast" + (err ? " err" : ""); d.setAttribute("role","status"); d.textContent = msg; document.body.appendChild(d); setTimeout(() => d.remove(), err ? 6000 : 2600); }
+async function guard(fn){ try { return await fn(); } catch(e){ if(e.message !== "redirect"){ console.error(e); toast("Δεν αποθηκεύτηκε: " + e.message, true); } } }
 const opt = (arr, sel) => arr.map(v => { const [val, lab] = Array.isArray(v) ? v : [v, v]; return `<option value="${esc(val)}"${val === sel ? " selected" : ""}>${esc(lab)}</option>`; }).join("");
-const statusBadge = s => { const [bg, fg] = STATUS_COLOR[s] || ["#eee","#333"]; return `<span class="badge" style="background:${bg};color:${fg}">${esc(s)}</span>`; };
-const prioBadge = p => `<span class="badge" style="background:${PRIO_COLOR[p]||"#999"}1A;color:${PRIO_COLOR[p]||"#999"}">${esc(p)}</span>`;
-const techName = e => (TECHS.find(t => t.email.toLowerCase() === (e||"").toLowerCase()) || {}).name || e || "—";
-const initials = n => (n||"?").split(/\s+/).map(w => w[0]).slice(0,2).join("").toUpperCase();
+const techName = e => (TECHS.find(t => t.email.toLowerCase() === (e || "").toLowerCase()) || {}).name || e || "Χωρίς ανάθεση";
+const initials = n => (n || "?").split(/\s+/).map(w => w[0]).slice(0,2).join("").toUpperCase();
+const prioHtml = p => `<span class="prio"><i style="background:${PRIO_COLOR[p]}"></i>${esc(p.slice(0,2))} ${esc(p.slice(3))}</span>`;
+const statusHtml = s => `<span class="status ${ST_CLASS[s] || ""}">${esc(s)}</span>`;
+function slaHtml(t, long){
+  const s = slaState(t);
+  if(!s) return `<span class="sla">${t.tier === "Χωρίς σύμβαση" || !t.tier ? "Χωρίς SLA" : "—"}</span>`;
+  return `<span class="sla ${s.cls}">${esc(s.label)}${s.final ? "" : `<span class="bar" aria-hidden="true"><i style="width:${s.pct}%"></i></span>`}</span>`;
+}
+const ICON = {
+  dash:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 13h6V4H4zM14 20h6v-9h-6zM14 4h6v4h-6zM4 20h6v-3H4z"/></svg>',
+  tickets:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M9 9h6M9 15h4"/></svg>',
+  clients:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V7l9-4 9 4v14"/><path d="M9 21v-6h6v6M8 10h.01M12 10h.01M16 10h.01"/></svg>',
+  plus:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  refresh:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>',
+  moon:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  back:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>'
+};
 
-/* ---------------- rendering: tickets ---------------- */
+/* ================= theme ================= */
+function applyTheme(){ let t = null; try { t = localStorage.getItem("praxis-theme"); } catch(_){} if(!t) t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"; document.documentElement.dataset.theme = t; }
+function toggleTheme(){ const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark"; document.documentElement.dataset.theme = t; try { localStorage.setItem("praxis-theme", t); } catch(_){} }
+applyTheme();
+
+/* ================= shell ================= */
 const FILTERS = [
   ["open","Ανοιχτά", t => OPEN.includes(t.status)],
-  ["mine","Δικά μου", t => OPEN.includes(t.status) && (t.tech||"").toLowerCase() === S.me.email],
-  ["new","Νέα", t => t.status === "Νέο"],
-  ["sla","SLA σε κίνδυνο", t => { const s = sla(t); return s && s.cls !== "ok"; }],
-  ["wait","Αναμονή πελάτη", t => t.status === "Αναμονή πελάτη"],
+  ["mine","Δικά μου", t => OPEN.includes(t.status) && (t.tech || "").toLowerCase() === S.me.email],
+  ["sla","SLA σε κίνδυνο", t => { const s = slaState(t); return s && (s.risk || s.breach) && OPEN.includes(t.status); }],
+  ["new","Χωρίς απόκριση", t => OPEN.includes(t.status) && !t.firstResp],
+  ["wait","Σε αναμονή", t => t.status.startsWith("Αναμονή")],
   ["done","Επιλυμένα", t => t.status === "Επιλύθηκε" || t.status === "Κλειστό"],
   ["all","Όλα", () => true]
 ];
+const fcount = k => S.tickets.filter(FILTERS.find(f => f[0] === k)[2]).length;
+
+function renderShell(){
+  $("#root").innerHTML = `
+  <div class="shell">
+    <aside class="side">
+      <div class="logo">PRAXIS<span>Υποστήριξη πελατών</span></div>
+      <nav class="nav" aria-label="Κύριο μενού">
+        <button data-v="dash">${ICON.dash}Πίνακας ελέγχου</button>
+        <button data-v="tickets">${ICON.tickets}Tickets <span class="count" id="navCount"></span></button>
+        <button data-v="clients">${ICON.clients}Πελάτες</button>
+      </nav>
+      <div class="side-foot">
+        <button id="themeBtn">${ICON.moon}Σκούρο / φωτεινό θέμα</button>
+        <div class="who"><b>${esc(S.me.name)}</b>${esc(S.me.email)}</div>
+        <button id="logoutBtn">Αποσύνδεση</button>
+      </div>
+    </aside>
+    <main id="main"></main>
+  </div>
+  <nav class="tabbar" aria-label="Κύριο μενού">
+    <button data-v="dash">${ICON.dash}Πίνακας</button>
+    <button data-v="tickets">${ICON.tickets}Tickets</button>
+    <button class="plus" id="tabNew"><span>${ICON.plus}</span></button>
+    <button data-v="clients">${ICON.clients}Πελάτες</button>
+    <button id="tabTheme">${ICON.moon}Θέμα</button>
+  </nav>`;
+  document.querySelectorAll("[data-v]").forEach(b => b.onclick = () => go(b.dataset.v));
+  $("#themeBtn").onclick = toggleTheme; $("#tabTheme").onclick = toggleTheme;
+  $("#tabNew").onclick = newTicket;
+  $("#logoutBtn").onclick = () => API.logout();
+}
+function go(view, push = true){ S.view = view; S.q = ""; if(push) history.pushState(null, "", "#" + view); render(); }
+function mtop(){ return `<div class="mtop"><div class="logo">PRAXIS</div><div class="sp"></div><button class="icon-btn" data-act="refresh" aria-label="Ανανέωση">${ICON.refresh}</button></div>`; }
+function render(){
+  document.querySelectorAll("[data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === S.view));
+  $("#navCount").textContent = fcount("open") || "";
+  const m = $("#main");
+  if(S.view === "ticket" && S.open) renderTicket(m);
+  else if(S.view === "clients") renderClients(m);
+  else if(S.view === "tickets") renderTickets(m);
+  else renderDash(m);
+  m.querySelectorAll('[data-act="refresh"]').forEach(b => b.onclick = refresh);
+  m.querySelectorAll('[data-act="new"]').forEach(b => b.onclick = newTicket);
+  window.scrollTo(0, 0);
+}
+const demoBanner = () => DEMO ? `<div class="demo">Λειτουργία επίδειξης με δοκιμαστικά δεδομένα. Τίποτα δεν αποθηκεύεται.</div>` : "";
+
+/* ================= dashboard ================= */
+function renderDash(m){
+  const open = S.tickets.filter(t => OPEN.includes(t.status));
+  const breaches = open.filter(t => slaState(t)?.breach);
+  const responded = S.tickets.filter(t => t.firstResp && t.created && new Date(t.created) > Date.now() - 30*864e5);
+  const avgResp = responded.length ? responded.reduce((a,t) => a + businessBetween(t.created, t.firstResp), 0) / responded.length : null;
+  const solved30 = S.tickets.filter(t => t.resolved && new Date(t.resolved) > Date.now() - 30*864e5);
+  const withSla = solved30.filter(t => t.resolveDue);
+  const slaPct = withSla.length ? Math.round(withSla.filter(t => new Date(t.resolved) <= new Date(t.resolveDue)).length / withSla.length * 100) : null;
+  const attention = open.map(t => ({ t, s:slaState(t) })).filter(x => x.s && (x.s.breach || x.s.risk)).sort((a,b) => b.s.pct - a.s.pct).slice(0,6);
+  const unassigned = open.filter(t => !t.tech);
+
+  const byClient = {}; open.forEach(t => byClient[t.client || "Άγνωστος"] = (byClient[t.client || "Άγνωστος"] || 0) + 1);
+  const topClients = Object.entries(byClient).sort((a,b) => b[1]-a[1]).slice(0,6);
+  const maxC = Math.max(1, ...topClients.map(x => x[1]));
+  const byStatus = OPEN.map(s => [s, open.filter(t => t.status === s).length]);
+  const maxS = Math.max(1, ...byStatus.map(x => x[1]));
+
+  m.innerHTML = `${mtop()}${demoBanner()}
+  <div class="page-head"><h1>Πίνακας ελέγχου</h1><div class="sp"></div>
+    <button class="icon-btn" data-act="refresh" aria-label="Ανανέωση" title="Ανανέωση">${ICON.refresh}</button>
+    <button class="btn newbtn" data-act="new">${ICON.plus}Νέο ticket</button></div>
+  <div class="kpis">
+    <div class="kpi"><div class="n">${open.length}</div><div class="l">Ανοιχτά tickets</div></div>
+    <div class="kpi ${breaches.length ? "bad" : ""}"><div class="n">${breaches.length}</div><div class="l">Εκτός SLA τώρα</div></div>
+    <div class="kpi"><div class="n">${avgResp == null ? "—" : fmtMin(avgResp)}</div><div class="l">Μέση πρώτη απόκριση, 30 ημέρες</div></div>
+    <div class="kpi"><div class="n">${slaPct == null ? "—" : slaPct + "%"}</div><div class="l">Επιλύσεις εντός SLA, 30 ημέρες</div></div>
+  </div>
+  <div class="dash">
+    <div class="stack">
+      <section class="panel"><h2>Θέλουν προσοχή<small>${attention.length ? "ταξινομημένα κατά SLA" : ""}</small></h2>
+        ${attention.length ? `<div class="table" style="border:0">${attention.map(x => miniRow(x.t)).join("")}</div>` : `<p style="color:var(--dim);margin:0">Κανένα ticket δεν πλησιάζει τη λήξη του SLA.</p>`}
+      </section>
+      <section class="panel"><h2>Νέα και επιλυμένα<small>τελευταίες 14 ημέρες</small></h2>${trendChart()}</section>
+    </div>
+    <div class="stack">
+      <section class="panel"><h2>Ανοιχτά ανά κατάσταση</h2>
+        ${byStatus.map(([s,n]) => `<div class="hbar"><span class="t">${esc(s)}</span><span class="b"><i style="width:${n/maxS*100}%"></i></span><span class="v">${n}</span></div>`).join("")}
+      </section>
+      <section class="panel"><h2>Ανοιχτά ανά πελάτη</h2>
+        ${topClients.length ? topClients.map(([c,n]) => `<div class="hbar"><span class="t" title="${esc(c)}">${esc(c)}</span><span class="b"><i style="width:${n/maxC*100}%"></i></span><span class="v">${n}</span></div>`).join("") : `<p style="color:var(--dim);margin:0">Δεν υπάρχουν ανοιχτά tickets.</p>`}
+      </section>
+      ${unassigned.length ? `<section class="panel"><h2>Χωρίς ανάθεση</h2>${unassigned.slice(0,5).map(miniRow).join("")}</section>` : ""}
+    </div>
+  </div>`;
+  m.querySelectorAll("[data-id]").forEach(b => b.onclick = () => openTicket(+b.dataset.id));
+}
+function miniRow(t){
+  return `<button class="trow" data-id="${t.id}" style="grid-template-columns:minmax(0,1fr) 170px;padding:10px 4px">
+    <span><span class="ttl" style="display:block">${esc(t.title)}</span><span class="tsub">${esc(t.no)}, ${esc(t.client || "χωρίς πελάτη")}</span></span>
+    <span class="c-sla">${slaHtml(t)}</span></button>`;
+}
+function trendChart(){
+  const days = [...Array(14)].map((_,i) => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - 13 + i); return d; });
+  const key = d => d.toDateString();
+  const created = days.map(d => S.tickets.filter(t => t.created && new Date(t.created).toDateString() === key(d)).length);
+  const solved = days.map(d => S.tickets.filter(t => t.resolved && new Date(t.resolved).toDateString() === key(d)).length);
+  const max = Math.max(2, ...created, ...solved), W = 560, H = 150, pad = 22, bw = (W - pad) / 14;
+  const y = v => H - 18 - (v / max) * (H - 30);
+  let bars = "";
+  days.forEach((d,i) => {
+    const x = pad + i*bw;
+    bars += `<rect x="${x+bw*0.14}" y="${y(created[i])}" width="${bw*0.34}" height="${H-18-y(created[i])}" rx="2" fill="var(--accent)"><title>${d.toLocaleDateString("el-GR")}: ${created[i]} νέα</title></rect>`;
+    bars += `<rect x="${x+bw*0.52}" y="${y(solved[i])}" width="${bw*0.34}" height="${H-18-y(solved[i])}" rx="2" fill="var(--done)"><title>${d.toLocaleDateString("el-GR")}: ${solved[i]} επιλυμένα</title></rect>`;
+    if(i % 2 === 0) bars += `<text x="${x+bw/2}" y="${H-3}" text-anchor="middle" font-size="10" fill="var(--dim)">${d.getDate()}/${d.getMonth()+1}</text>`;
+  });
+  const grid = [0, Math.round(max/2), max].map(v => `<line x1="${pad}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${pad-6}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="var(--dim)">${v}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Νέα και επιλυμένα tickets ανά ημέρα">${grid}${bars}</svg>
+    <div class="legend"><span><i style="background:var(--accent)"></i>Νέα</span><span><i style="background:var(--done)"></i>Επιλυμένα</span></div>`;
+}
+
+/* ================= tickets list ================= */
 const PRIO_RANK = p => PRIORITIES.indexOf(p);
-function renderTickets(){
+function renderTickets(m){
   const f = FILTERS.find(x => x[0] === S.filter)[2];
   const q = S.q.trim().toLowerCase();
   const rows = S.tickets.filter(f).filter(t => !q || [t.no,t.title,t.client,t.reqName,t.reqEmail,t.desc].join(" ").toLowerCase().includes(q))
-    .sort((a,b) => (OPEN.includes(a.status) && OPEN.includes(b.status) ? PRIO_RANK(a.priority) - PRIO_RANK(b.priority) : 0) || new Date(b.last||b.created) - new Date(a.last||a.created));
-  const cnt = k => S.tickets.filter(FILTERS.find(x => x[0] === k)[2]).length;
-  const stat = (k, lab, warn) => `<button class="stat${warn && cnt(k) ? " warn" : ""}${S.filter === k ? " on" : ""}" data-f="${k}"><b>${cnt(k)}</b><span>${lab}</span></button>`;
-  $("#main").innerHTML = `
-    <div class="stats">${stat("open","Ανοιχτά")}${stat("new","Νέα")}${stat("sla","SLA σε κίνδυνο",1)}${stat("wait","Αναμονή πελάτη")}</div>
-    <div class="toolbar">
-      <div class="chips">${FILTERS.map(([k,l]) => `<button class="chip${S.filter === k ? " on" : ""}" data-f="${k}">${l}</button>`).join("")}</div>
-      <input class="search" id="q" type="search" placeholder="Αναζήτηση: αριθμός, θέμα, πελάτης…" value="${esc(S.q)}">
-    </div>
-    <div class="list">${rows.length ? rows.map(card).join("") : `<div class="empty">Κανένα ticket σε αυτή την προβολή.</div>`}</div>`;
-  $("#main").querySelectorAll("[data-f]").forEach(b => b.onclick = () => { S.filter = b.dataset.f; renderTickets(); });
-  const qi = $("#q"); qi.oninput = () => { S.q = qi.value; const pos = qi.selectionStart; renderTickets(); const n = $("#q"); n.focus(); n.setSelectionRange(pos,pos); };
-  $("#main").querySelectorAll(".card").forEach(c => c.onclick = () => openTicket(+c.dataset.id));
+    .sort((a,b) => (OPEN.includes(a.status) && OPEN.includes(b.status) ? PRIO_RANK(a.priority) - PRIO_RANK(b.priority) : 0) || new Date(b.last || b.created) - new Date(a.last || a.created));
+  m.innerHTML = `${mtop()}${demoBanner()}
+  <div class="page-head"><h1>Tickets</h1><div class="sp"></div>
+    <input class="field search" id="q" type="search" placeholder="Αναζήτηση αριθμού, θέματος, πελάτη" value="${esc(S.q)}" aria-label="Αναζήτηση">
+    <button class="btn newbtn" data-act="new">${ICON.plus}Νέο ticket</button></div>
+  <div class="filters" role="tablist">${FILTERS.map(([k,l]) => `<button role="tab" aria-selected="${S.filter === k}" class="${S.filter === k ? "on" : ""}" data-f="${k}">${l}<em>${fcount(k)}</em></button>`).join("")}</div>
+  <div class="table">
+    <div class="trow thead"><span class="c-no">Αριθμός</span><span>Θέμα</span><span class="c-type">Τύπος</span><span class="c-prio">Προτεραιότητα</span><span class="c-status">Κατάσταση</span><span class="c-sla">SLA</span></div>
+    ${rows.length ? rows.map(t => `<button class="trow" data-id="${t.id}">
+      <span class="tno c-no">${esc(t.no)}</span>
+      <span style="min-width:0"><span class="ttl" style="display:block">${esc(t.title)}</span><span class="tsub">${esc(t.client || "χωρίς πελάτη")}, ${ago(t.last || t.created)}</span></span>
+      <span class="tsub c-type">${esc(t.type)}</span>
+      <span class="c-prio">${prioHtml(t.priority)}</span>
+      <span class="c-status">${statusHtml(t.status)}</span>
+      <span class="c-sla">${slaHtml(t)}</span></button>`).join("")
+      : `<div class="empty">${S.q ? "Κανένα ticket δεν ταιριάζει με την αναζήτηση." : "Δεν υπάρχουν tickets σε αυτή την προβολή."}${S.filter === "open" && !S.q ? `<br><button class="btn" data-act="new">${ICON.plus}Νέο ticket</button>` : ""}</div>`}
+  </div>`;
+  m.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { S.filter = b.dataset.f; renderTickets(m); bindCommon(m); });
+  const qi = $("#q"); qi.oninput = () => { S.q = qi.value; const p = qi.selectionStart; renderTickets(m); bindCommon(m); const n = $("#q"); n.focus(); n.setSelectionRange(p,p); };
+  bindCommon(m);
 }
-function card(t){
-  const s = sla(t);
-  return `<button class="card" data-id="${t.id}">
-    <span class="bar" style="background:${PRIO_COLOR[t.priority]}"></span>
-    <span>
-      <span class="no">${esc(t.no)} · ${esc(t.client || "—")}</span>
-      <h3>${esc(t.title)}</h3>
-      <span class="meta">${[t.reqName || t.reqEmail, ago(t.last || t.created), t.tech ? techName(t.tech) : ""].filter(Boolean).map(esc).join(" · ")}</span>
-    </span>
-    <span class="right">${statusBadge(t.status)}${prioBadge(t.priority)}${s ? `<span class="sla ${s.cls}">${s.txt}</span>` : ""}</span>
-  </button>`;
+function bindCommon(m){
+  m.querySelectorAll("[data-id]").forEach(b => b.onclick = () => openTicket(+b.dataset.id));
+  m.querySelectorAll('[data-act="new"]').forEach(b => b.onclick = newTicket);
+  m.querySelectorAll('[data-act="refresh"]').forEach(b => b.onclick = refresh);
 }
 
-/* ---------------- ticket drawer ---------------- */
-let replyMode = DIR.OUT;
-async function openTicket(id){
-  S.open = S.tickets.find(t => t.id === id); S.comments = null; replyMode = DIR.OUT;
-  renderDrawer();
-  S.comments = await guard(() => API.comments(id)) || [];
-  if(S.open && S.open.id === id) renderDrawer(true);
+/* ================= ticket detail ================= */
+let replyMode = DIR.OUT, pendingResolve = false;
+async function openTicket(id, push = true){
+  S.open = S.tickets.find(t => t.id === id); if(!S.open) return;
+  S.comments = null; replyMode = DIR.OUT; pendingResolve = false;
+  S.view = "ticket"; if(push) history.pushState(null, "", "#t" + id);
+  render();
+  const c = await guard(() => API.comments(id)) || [];
+  if(S.open && S.open.id === id){ S.comments = c; renderTimeline(); }
 }
-function closeDrawer(){ S.open = null; $("#layer").innerHTML = ""; history.replaceState(null, "", location.pathname); }
-function renderDrawer(keepComposer){
-  const t = S.open; if(!t) return;
-  const draft = keepComposer && $("#cbody") ? $("#cbody").value : "";
-  const s = sla(t);
-  const spLink = !DEMO ? `https://${CFG.siteHost}${CFG.sitePath}/Lists/Tickets/DispForm.aspx?ID=${t.id}` : "#";
-  const techOpts = [["","— Χωρίς ανάθεση —"], ...TECHS.map(x => [x.email, x.name])];
+function renderTicket(m){
+  const t = S.open, cl = clientOf(t);
+  const computed = MATRIX[t.impact]?.[t.urgency];
+  const techOpts = [["","Χωρίς ανάθεση"], ...TECHS.map(x => [x.email, x.name])];
   if(t.tech && !TECHS.some(x => x.email.toLowerCase() === t.tech.toLowerCase())) techOpts.push([t.tech, t.tech]);
-  const tl = S.comments === null ? `<div class="spin" style="margin:16px auto"></div>` :
-    [{ dir:DIR.IN, author:t.reqName || t.reqEmail, body:t.desc, created:t.created, first:true }, ...S.comments.sort((a,b) => new Date(a.created) - new Date(b.created))]
-    .map(c => `<div class="msg ${c.dir === DIR.IN ? "in" : c.dir === DIR.OUT ? "out" : "note"}">
-      <div class="h"><span><b>${esc(c.author || "—")}</b> · ${c.first ? "Αρχικό αίτημα" : esc(c.dir)}${c.dir === DIR.OUT && !c.first ? (c.sent ? " ✓ στάλθηκε" : " · σε αναμονή αποστολής") : ""}</span><span>${fmt(c.created)}</span></div>
-      <div class="t">${esc(c.body || "(κενό)")}</div></div>`).join("");
-  $("#layer").innerHTML = `
-    <div class="overlay" id="ov"></div>
-    <aside class="drawer" role="dialog" aria-label="${esc(t.no)}">
-      <header>
-        <div style="flex:1;min-width:0">
-          <div class="no" style="font-family:Syne,sans-serif;font-weight:700;font-size:12px;color:var(--dim)">${esc(t.no)} · ${esc(t.source || "")} · ${fmt(t.created)}</div>
-          <h2>${esc(t.title)}</h2>
-          <div class="meta" style="margin-top:6px">${statusBadge(t.status)}${prioBadge(t.priority)}${s ? `<span class="sla ${s.cls}">${s.txt}</span>` : ""}</div>
-        </div>
-        <button class="closebtn" id="xbtn" aria-label="Κλείσιμο">✕</button>
-      </header>
-      <div class="body">
-        <div class="grid2">
-          <label class="f">Κατάσταση<select data-k="status">${opt(STATUSES, t.status)}</select></label>
-          <label class="f">Προτεραιότητα<select data-k="priority">${opt(PRIORITIES, t.priority)}</select></label>
-          <label class="f">Τεχνικός<select data-k="tech">${opt(techOpts, t.tech || "")}</select></label>
-          <label class="f">Κατηγορία<select data-k="category">${opt(["", ...CATEGORIES], t.category)}</select></label>
-        </div>
-        <div class="box"><h4>Πελάτης</h4>
-          <dl class="kv">
-            <dt>Εταιρεία</dt><dd>${esc(t.client || "—")} ${t.tier ? `<span class="badge" style="background:var(--panel);color:var(--primary)">${esc(t.tier)}</span>` : ""}</dd>
-            <dt>Αιτών</dt><dd>${esc(t.reqName || "—")}</dd>
-            <dt>Email</dt><dd>${t.reqEmail ? `<a href="mailto:${esc(t.reqEmail)}">${esc(t.reqEmail)}</a>` : "—"}</dd>
-            <dt>SLA έως</dt><dd>${t.due ? fmt(t.due) : "Χωρίς δέσμευση"}</dd>
-            ${t.firstResp ? `<dt>1η απόκριση</dt><dd>${fmt(t.firstResp)}</dd>` : ""}
-            ${t.resolved ? `<dt>Επίλυση</dt><dd>${fmt(t.resolved)}</dd>` : ""}
-          </dl>
-          ${!DEMO ? `<div style="margin-top:8px;font-size:13px"><a href="${spLink}" target="_blank" rel="noopener" style="color:var(--primary)">Άνοιγμα στο SharePoint (συνημμένα) ↗</a></div>` : ""}
-        </div>
-        <div class="box"><h4>Ιστορικό</h4><div class="tl">${tl}</div></div>
+  const closed = t.status === "Κλειστό";
+  const spLink = DEMO ? "" : `https://${CFG.siteHost}${CFG.sitePath}/Lists/Tickets/DispForm.aspx?ID=${t.id}`;
+  m.innerHTML = `${mtop()}${demoBanner()}
+  <button class="back" id="backBtn">${ICON.back}Tickets</button>
+  <div class="detail">
+    <div style="min-width:0">
+      <div class="dhead">
+        <div class="meta">${esc(t.no)}, ${esc(t.type)}, από ${esc(t.source || "—")}, ${fmt(t.created)}</div>
+        <h1>${esc(t.title)}</h1>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">${statusHtml(t.status)}${prioHtml(t.priority)}<span style="min-width:180px">${slaHtml(t)}</span></div>
       </div>
-      <div class="composer">
-        <div class="seg"><button data-m="${DIR.OUT}" class="${replyMode === DIR.OUT ? "on" : ""}">Απάντηση στον πελάτη</button><button data-m="${DIR.NOTE}" class="${replyMode === DIR.NOTE ? "on" : ""}">Εσωτερική σημείωση</button></div>
-        <textarea id="cbody" rows="3" placeholder="${replyMode === DIR.OUT ? "Γράψε απάντηση — θα σταλεί με email από το support@" : "Σημείωση που βλέπει μόνο η ομάδα"}">${esc(draft)}</textarea>
+      <div class="timeline" id="tl"><div class="spin" style="margin:24px auto"></div></div>
+      ${closed ? `<div class="composer"><p style="margin:4px 0 10px;color:var(--dim)">Το ticket είναι κλειστό. Αν το θέμα επανεμφανίστηκε, ξανάνοιξέ το.</p><button class="btn" id="reopenBtn">Επανάνοιγμα ticket</button></div>` : `
+      <div class="composer" id="composer">
+        <div class="seg" role="tablist"><button data-m="${DIR.OUT}">Απάντηση στον πελάτη</button><button data-m="${DIR.NOTE}">Εσωτερική σημείωση</button></div>
+        <textarea id="cbody" aria-label="Κείμενο"></textarea>
         <div class="crow">
-          <select id="after">${opt([["","Κατάσταση: χωρίς αλλαγή"],["Αναμονή πελάτη","→ Αναμονή πελάτη"],["Σε εξέλιξη","→ Σε εξέλιξη"],["Επιλύθηκε","→ Επιλύθηκε"]], replyMode === DIR.OUT && t.status !== "Αναμονή πελάτη" ? "Αναμονή πελάτη" : "")}</select>
-          <button class="btn" id="sendBtn">${replyMode === DIR.OUT ? "Αποστολή" : "Αποθήκευση"}</button>
+          <select class="field" id="after" aria-label="Κατάσταση μετά την αποστολή"></select>
+          <button class="btn" id="sendBtn"></button>
         </div>
+      </div>`}
+    </div>
+    <div class="props">
+      <div class="prop"><label for="p-status">Κατάσταση</label>
+        <select class="field" id="p-status" ${closed ? "disabled" : ""}>${opt(STATUSES.filter(s => s !== "Κλειστό" || closed), t.status)}</select></div>
+      <div class="prop"><label for="p-tech">Τεχνικός</label><select class="field" id="p-tech">${opt(techOpts, t.tech || "")}</select></div>
+      <div class="prop">
+        <div class="pair">
+          <div><label for="p-impact">Επίπτωση</label><select class="field" id="p-impact" title="${esc(IMPACT_HINT[t.impact])}">${opt(LEVELS, t.impact)}</select></div>
+          <div><label for="p-urgency">Επείγον</label><select class="field" id="p-urgency" title="${esc(URGENCY_HINT[t.urgency])}">${opt(LEVELS, t.urgency)}</select></div>
+        </div>
+        <label for="p-prio" style="margin-top:10px">Προτεραιότητα</label>
+        <select class="field" id="p-prio">${opt(PRIORITIES, t.priority)}</select>
+        ${t.priority !== computed ? `<div class="computed">Ο πίνακας δίνει ${esc(computed)}. Αιτιολόγηση: ${esc(t.prioReason || "—")}</div>` : `<div class="computed">Υπολογίζεται από επίπτωση και επείγον.</div>`}
+        <div id="prioReasonBox"></div>
       </div>
-    </aside>`;
-  $("#ov").onclick = closeDrawer; $("#xbtn").onclick = closeDrawer;
-  $("#layer").querySelectorAll("select[data-k]").forEach(sel => sel.onchange = () => changeField(sel.dataset.k, sel.value));
-  $("#layer").querySelectorAll(".seg button").forEach(b => b.onclick = () => { replyMode = b.dataset.m; renderDrawer(true); });
+      <div class="prop"><div class="pair">
+        <div><label for="p-type">Τύπος</label><select class="field" id="p-type">${opt(TYPES, t.type)}</select></div>
+        <div><label for="p-cat">Κατηγορία</label><select class="field" id="p-cat">${opt(["", ...CATEGORIES], t.category)}</select></div>
+      </div></div>
+      <div class="prop"><span class="k">Πελάτης</span><div class="v">${esc(t.client || "—")}<br><span style="color:var(--dim);font-size:13px">${esc(t.tier || "Χωρίς σύμβαση")}${cl?.phone ? `, ${esc(cl.phone)}` : ""}</span></div></div>
+      <div class="prop"><span class="k">Αιτών</span><div class="v">${esc(t.reqName || "—")}${t.reqEmail ? `<br><a href="mailto:${esc(t.reqEmail)}">${esc(t.reqEmail)}</a>` : ""}</div></div>
+      <div class="prop"><span class="k">SLA</span><div class="v" style="font-size:13px">
+        Απόκριση έως ${fmt(t.due)}${t.firstResp ? `, απαντήθηκε ${fmt(t.firstResp)}` : ""}<br>
+        Επίλυση έως ${fmt(t.resolveDue)}${t.resolved ? `, επιλύθηκε ${fmt(t.resolved)}` : ""}
+        ${!t.due && !t.resolveDue ? `<br><span style="color:var(--dim)">Ο πελάτης δεν έχει σύμβαση, άρα δεν υπάρχει δέσμευση χρόνου.</span>` : ""}</div></div>
+      ${spLink ? `<div class="prop"><a href="${spLink}" target="_blank" rel="noopener" style="color:var(--primary);font-size:14px">Συνημμένα στο SharePoint</a></div>` : ""}
+    </div>
+  </div>`;
+  $("#backBtn").onclick = () => { S.open = null; go("tickets"); };
+  bindProps();
+  if(closed) $("#reopenBtn").onclick = reopen; else bindComposer();
+  if(S.comments) renderTimeline();
+}
+function renderTimeline(){
+  const t = S.open, el = $("#tl"); if(!el || !t) return;
+  const items = [{ dir:DIR.IN, author:t.reqName || t.reqEmail || "Πελάτης", body:t.desc, created:t.created, first:true },
+    ...(S.comments || []).slice().sort((a,b) => new Date(a.created) - new Date(b.created))];
+  el.innerHTML = items.map(c => {
+    if(c.dir === DIR.SYS) return `<div class="ev sys"><span class="dot"></span><div class="who2">${esc(c.body)}, ${esc(c.author)}, ${fmt(c.created)}</div></div>`;
+    const cls = c.dir === DIR.IN ? "in" : c.dir === DIR.OUT ? "out" : "note";
+    const lab = c.first ? "άνοιξε το αίτημα" : c.dir === DIR.IN ? "απάντησε" : c.dir === DIR.OUT ? (c.sent ? "απάντησε στον πελάτη, εστάλη" : "απάντησε στον πελάτη, σε αναμονή αποστολής") : "εσωτερική σημείωση";
+    return `<div class="ev ${cls}"><span class="dot"></span><div class="who2"><b>${esc(c.author || "—")}</b> ${lab}, ${fmt(c.created)}</div><div class="msg">${esc(c.body || "(χωρίς κείμενο)")}</div></div>`;
+  }).join("");
+}
+function bindComposer(){
+  const t = S.open;
+  const paint = () => {
+    document.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", b.dataset.m === replyMode));
+    $("#cbody").placeholder = pendingResolve ? "Τι έγινε για να λυθεί; Η σημείωση θα σταλεί στον πελάτη." :
+      replyMode === DIR.OUT ? "Η απάντηση θα σταλεί με email από το support@praxisit.gr" : "Το βλέπει μόνο η ομάδα";
+    const def = pendingResolve ? "Επιλύθηκε" : replyMode === DIR.OUT && !["Αναμονή πελάτη","Αναμονή προμηθευτή"].includes(t.status) ? "Αναμονή πελάτη" : "";
+    $("#after").innerHTML = opt([["","Χωρίς αλλαγή κατάστασης"],["Σε εξέλιξη","Μετά: Σε εξέλιξη"],["Αναμονή πελάτη","Μετά: Αναμονή πελάτη"],["Αναμονή προμηθευτή","Μετά: Αναμονή προμηθευτή"],["Επιλύθηκε","Μετά: Επιλύθηκε"]], def);
+    $("#sendBtn").textContent = replyMode === DIR.OUT ? "Αποστολή στον πελάτη" : "Αποθήκευση σημείωσης";
+  };
+  document.querySelectorAll(".seg button").forEach(b => b.onclick = () => { replyMode = b.dataset.m; paint(); });
   $("#sendBtn").onclick = sendComment;
+  paint();
+}
+function bindProps(){
+  const t = S.open;
+  $("#p-status").onchange = e => {
+    const v = e.target.value;
+    if(v === "Επιλύθηκε"){ e.target.value = t.status; pendingResolve = true; replyMode = DIR.OUT; bindComposer(); $("#cbody").focus(); toast("Γράψε τι έγινε και πάτησε αποστολή για να επιλυθεί."); return; }
+    changeTicket(statusPatch(t, v), `Κατάσταση: ${t.status} → ${v}`);
+  };
+  $("#p-tech").onchange = e => { const v = e.target.value; const p = { tech:v }; if(v && t.status === "Νέο") Object.assign(p, statusPatch(t, "Ανατέθηκε")); changeTicket(p, `Ανάθεση: ${techName(v)}`); };
+  $("#p-type").onchange = e => changeTicket({ type:e.target.value }, `Τύπος: ${e.target.value}`);
+  $("#p-cat").onchange = e => changeTicket({ category:e.target.value }, `Κατηγορία: ${e.target.value || "—"}`);
+  const reprio = (impact, urgency) => {
+    const p = MATRIX[impact][urgency];
+    const patch = { impact, urgency, priority:p, prioReason:"", ...slaPatch(t, p) };
+    changeTicket(patch, `Επίπτωση ${impact}, επείγον ${urgency}, προτεραιότητα ${p}`);
+  };
+  $("#p-impact").onchange = e => reprio(e.target.value, t.urgency);
+  $("#p-urgency").onchange = e => reprio(t.impact, e.target.value);
+  $("#p-prio").onchange = e => {
+    const v = e.target.value, computed = MATRIX[t.impact][t.urgency];
+    if(v === computed){ changeTicket({ priority:v, prioReason:"", ...slaPatch(t, v) }, `Προτεραιότητα: ${v}`); return; }
+    $("#prioReasonBox").innerHTML = `<label for="p-reason" style="margin-top:10px">Γιατί αλλάζει η προτεραιότητα;</label>
+      <input class="field" id="p-reason" placeholder="π.χ. ο πελάτης έχει έλεγχο αύριο"><div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn" id="p-reason-ok">Αλλαγή σε ${esc(v.slice(0,2))}</button><button class="btn quiet" id="p-reason-x">Άκυρο</button></div>`;
+    $("#p-reason").focus();
+    $("#p-reason-x").onclick = () => { e.target.value = t.priority; $("#prioReasonBox").innerHTML = ""; };
+    $("#p-reason-ok").onclick = () => { const r = $("#p-reason").value.trim(); if(!r) return toast("Η αιτιολόγηση χρειάζεται για να αλλάξει η προτεραιότητα.", true);
+      changeTicket({ priority:v, prioReason:r, ...slaPatch(t, v) }, `Προτεραιότητα: ${t.priority} → ${v} (${r})`); };
+  };
+}
+function slaPatch(t, priority){
+  const c = clientOf(t);
+  const dd = dueDates(t.created, t.tier, c?.sla, priority);
+  const p = { resolveDue: dd.resolveDue, resolveAlerted:false };
+  if(!t.firstResp){ p.due = dd.due; p.slaAlerted = false; }
+  return p;
 }
 function statusPatch(t, status){
   const p = { status, last:nowIso() };
-  if(status !== "Νέο" && !t.firstResp) p.firstResp = nowIso();
+  if(!["Νέο","Ανατέθηκε"].includes(status) && !t.firstResp) p.firstResp = nowIso();
   if(status === "Επιλύθηκε" && !t.resolved) p.resolved = nowIso();
   if(OPEN.includes(status)) p.resolved = "";
   return p;
 }
-async function changeField(k, v){
-  const t = S.open; let patch = { [k]:v };
-  if(k === "status") patch = statusPatch(t, v);
-  const ok = await guard(async () => { await API.updateTicket(t.id, patch); return true; });
-  if(ok){ Object.keys(patch).forEach(x => t[x] = patch[x] === "" ? null : patch[x]); renderDrawer(true); refreshList(); toast("Αποθηκεύτηκε"); }
+async function logEvent(text){ const c = await guard(() => API.addComment({ ref:S.open.id, body:text, dir:DIR.SYS, author:S.me.name })); if(c && S.comments) S.comments.push(c); }
+async function changeTicket(patch, logText){
+  const t = S.open;
+  const ok = await guard(async () => { await API.updateTicket(t.id, { ...patch, last:patch.last || nowIso() }); return true; });
+  if(!ok){ render(); return; }
+  Object.keys(patch).forEach(k => t[k] = patch[k] === "" ? null : patch[k]);
+  t.last = nowIso();
+  if(logText) await logEvent(logText);
+  render(); toast("Αποθηκεύτηκε");
 }
+async function reopen(){ await changeTicket({ status:"Σε εξέλιξη", resolved:"", last:nowIso() }, "Επανάνοιγμα ticket"); }
 async function sendComment(){
   const t = S.open, body = $("#cbody").value.trim(), after = $("#after").value;
-  if(!body) return toast("Γράψε πρώτα κείμενο", true);
-  if(replyMode === DIR.OUT && !t.reqEmail) return toast("Το ticket δεν έχει email πελάτη", true);
+  if(!body) return toast(pendingResolve ? "Γράψε σύντομα τι έγινε για να επιλυθεί." : "Γράψε πρώτα το κείμενο.", true);
+  if(replyMode === DIR.OUT && !t.reqEmail) return toast("Το ticket δεν έχει email πελάτη. Αποθήκευσέ το ως εσωτερική σημείωση.", true);
   $("#sendBtn").disabled = true;
   const c = await guard(() => API.addComment({ ref:t.id, body, dir:replyMode, author:S.me.name }));
-  if(c){
-    S.comments.push(c);
-    let patch = { last:nowIso() };
-    if(after && after !== t.status) patch = statusPatch(t, after);
-    else if(replyMode === DIR.OUT && t.status === "Νέο") patch = statusPatch(t, "Σε εξέλιξη");
-    else if(replyMode === DIR.OUT && !t.firstResp) patch.firstResp = nowIso();
-    await guard(() => API.updateTicket(t.id, patch));
-    Object.keys(patch).forEach(x => t[x] = patch[x] === "" ? null : patch[x]);
-    $("#cbody").value = ""; renderDrawer(); refreshList();
-    toast(replyMode === DIR.OUT ? "Η απάντηση μπήκε στην ουρά αποστολής" : "Η σημείωση αποθηκεύτηκε");
-  } else $("#sendBtn").disabled = false;
+  if(!c){ $("#sendBtn").disabled = false; return; }
+  S.comments.push(c);
+  let patch = { last:nowIso() }, log = "";
+  if(after && after !== t.status){ patch = statusPatch(t, after); log = `Κατάσταση: ${t.status} → ${after}`; }
+  else if(replyMode === DIR.OUT && ["Νέο","Ανατέθηκε"].includes(t.status)){ patch = statusPatch(t, "Σε εξέλιξη"); log = `Κατάσταση: ${t.status} → Σε εξέλιξη`; }
+  else if(replyMode === DIR.OUT && !t.firstResp) patch.firstResp = nowIso();
+  pendingResolve = false;
+  await changeTicket(patch, log);
+  toast(replyMode === DIR.OUT ? "Η απάντηση θα σταλεί σε λίγα δευτερόλεπτα" : "Η σημείωση αποθηκεύτηκε");
 }
-function refreshList(){ if(S.view === "tickets") renderTickets(); }
 
-/* ---------------- new ticket ---------------- */
-function modal(title, html, onSave, extraBtn){
-  $("#layer").insertAdjacentHTML("beforeend", `<div class="overlay m" id="mov"></div>
-    <div class="modal" role="dialog"><header>${esc(title)}</header><form class="mbody" id="mform">${html}
-    <div class="acts">${extraBtn || ""}<span style="flex:1"></span><button type="button" class="btn ghost" id="mcancel">Άκυρο</button><button class="btn" id="msave">Αποθήκευση</button></div></form></div>`);
-  const close = () => { $("#mov")?.remove(); $(".modal")?.remove(); };
+/* ================= modal ================= */
+function modal(title, html, onSave, extra){
+  $("#layer").innerHTML = `<div class="overlay" id="mov"></div><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><header id="mt">${esc(title)}</header>
+    <form id="mform">${html}<div class="acts">${extra || ""}<span class="sp"></span><button type="button" class="btn quiet" id="mcancel">Άκυρο</button><button class="btn" id="msave">Αποθήκευση</button></div></form></div>`;
+  const close = () => { $("#layer").innerHTML = ""; };
   $("#mov").onclick = close; $("#mcancel").onclick = close;
   $("#mform").onsubmit = async e => { e.preventDefault(); $("#msave").disabled = true; const fd = Object.fromEntries(new FormData(e.target)); if(await onSave(fd) !== false) close(); else $("#msave").disabled = false; };
+  setTimeout(() => $("#mform input, #mform select")?.focus(), 30);
   return close;
 }
 function newTicket(){
-  const clientOpts = [["","— Επίλεξε πελάτη —"], ...S.clients.slice().sort((a,b) => a.name.localeCompare(b.name,"el")).map(c => [String(c.id), c.name])];
+  const clientOpts = [["","Επίλεξε πελάτη"], ...S.clients.slice().sort((a,b) => a.name.localeCompare(b.name,"el")).map(c => [String(c.id), c.name])];
   modal("Νέο ticket", `
-    <label class="f">Πελάτης<select name="clientId">${opt(clientOpts,"")}</select></label>
-    <div class="grid2"><label class="f">Όνομα αιτούντος<input name="reqName"></label><label class="f">Email αιτούντος<input name="reqEmail" type="email"></label></div>
-    <label class="f">Θέμα<input name="title" required></label>
-    <label class="f">Περιγραφή<textarea name="desc" rows="4"></textarea></label>
-    <div class="grid2"><label class="f">Προτεραιότητα<select name="priority">${opt(PRIORITIES,"P3 Κανονικό")}</select></label>
-    <label class="f">Κατηγορία<select name="category">${opt(CATEGORIES,"Άλλο")}</select></label>
-    <label class="f">Πηγή<select name="source">${opt(SOURCES,"Τηλέφωνο")}</select></label>
-    <label class="f">Τεχνικός<select name="tech">${opt([["","— Χωρίς ανάθεση —"], ...TECHS.map(x => [x.email, x.name])], S.me.email)}</select></label></div>`,
+    <label>Πελάτης<select class="field" name="clientId">${opt(clientOpts,"")}</select></label>
+    <div class="grid2"><label>Όνομα αιτούντος<input class="field" name="reqName"></label><label>Email αιτούντος<input class="field" name="reqEmail" type="email"></label></div>
+    <label>Θέμα<input class="field" name="title" required></label>
+    <label>Περιγραφή<textarea class="field" name="desc" rows="4"></textarea></label>
+    <div class="grid2">
+      <label>Τύπος<select class="field" name="type">${opt(TYPES,"Περιστατικό")}</select></label>
+      <label>Κατηγορία<select class="field" name="category">${opt(CATEGORIES,"Άλλο")}</select></label>
+      <label>Επίπτωση<select class="field" name="impact" id="n-imp">${LEVELS.map(l => `<option value="${l}"${l === "Μεσαία" ? " selected" : ""}>${l}: ${IMPACT_HINT[l]}</option>`).join("")}</select></label>
+      <label>Επείγον<select class="field" name="urgency" id="n-urg">${LEVELS.map(l => `<option value="${l}"${l === "Μεσαία" ? " selected" : ""}>${l}: ${URGENCY_HINT[l]}</option>`).join("")}</select></label>
+      <label>Πηγή<select class="field" name="source">${opt(SOURCES,"Τηλέφωνο")}</select></label>
+      <label>Τεχνικός<select class="field" name="tech">${opt([["","Χωρίς ανάθεση"], ...TECHS.map(x => [x.email, x.name])], S.me.email)}</select></label>
+    </div>
+    <div class="computed" id="n-prio"></div>`,
     async fd => {
       const c = S.clients.find(x => String(x.id) === fd.clientId);
-      const hrs = c ? +(c.sla || CFG.tierSla?.[c.tier] || 0) : 0;
-      const obj = { title:fd.title, desc:fd.desc, priority:fd.priority, category:fd.category, source:fd.source, tech:fd.tech || (c && c.tech) || "",
-        reqName:fd.reqName, reqEmail:fd.reqEmail, client:c ? c.name : "", tier:c ? c.tier : "Χωρίς σύμβαση", status:"Νέο",
-        due: hrs > 0 ? new Date(Date.now() + hrs*3600000).toISOString() : "", last:nowIso() };
+      const priority = MATRIX[fd.impact][fd.urgency], created = nowIso(), tier = c ? c.tier : "Χωρίς σύμβαση";
+      const dd = dueDates(created, tier, c?.sla, priority);
+      const tech = fd.tech || (c && c.tech) || "";
+      const obj = { title:fd.title, desc:fd.desc, type:fd.type, category:fd.category, impact:fd.impact, urgency:fd.urgency, priority,
+        source:fd.source, tech, reqName:fd.reqName, reqEmail:fd.reqEmail, client:c ? c.name : "", tier,
+        status: tech ? "Ανατέθηκε" : "Νέο", due:dd.due, resolveDue:dd.resolveDue, last:created, slaAlerted:false, resolveAlerted:false };
       const t = await guard(() => API.createTicket(obj));
       if(!t) return false;
-      S.tickets.unshift(Object.assign(t, { created:t.created || nowIso() })); S.view = "tickets"; S.filter = "open"; setTab(); renderTickets(); toast(`Δημιουργήθηκε ${t.no}`);
+      if(!t.created) t.created = created;
+      S.tickets.unshift(t);
+      await guard(() => API.addComment({ ref:t.id, body:`Δημιουργήθηκε από ${S.me.name} (${fd.source})`, dir:DIR.SYS, author:S.me.name }));
+      toast(`Δημιουργήθηκε το ${t.no}`); openTicket(t.id);
     });
+  const upd = () => { const p = MATRIX[$("#n-imp").value][$("#n-urg").value]; $("#n-prio").textContent = `Προτεραιότητα: ${p}. Αλλάζει αργότερα από το ticket, με αιτιολόγηση.`; };
+  $("#n-imp").onchange = upd; $("#n-urg").onchange = upd; upd();
 }
 
-/* ---------------- clients ---------------- */
-function renderClients(){
+/* ================= clients ================= */
+function renderClients(m){
   const q = S.q.trim().toLowerCase();
   const rows = S.clients.filter(c => !q || (c.name + " " + c.domain).toLowerCase().includes(q)).sort((a,b) => a.name.localeCompare(b.name,"el"));
   const openCnt = n => S.tickets.filter(t => t.client === n && OPEN.includes(t.status)).length;
-  $("#main").innerHTML = `
-    <div class="toolbar"><input class="search" id="q" type="search" placeholder="Αναζήτηση πελάτη ή domain…" value="${esc(S.q)}"><button class="btn" id="addCl">+ Πελάτης</button></div>
-    <p style="font-size:13px;color:var(--dim);margin:0 0 10px">Τα email από το domain ενός πελάτη αντιστοιχίζονται αυτόματα σε αυτόν και παίρνουν το SLA του πακέτου του.</p>
-    <div class="list">${rows.length ? rows.map(c => `<button class="ccard" data-id="${c.id}">
-      <span><h3>${esc(c.name)}</h3><span class="meta"><span>${esc(c.domain || "χωρίς domain")}</span>${c.phone ? `<span>· ${esc(c.phone)}</span>` : ""}</span></span>
-      <span class="right"><span class="badge" style="background:var(--panel);color:var(--primary)">${esc(c.tier)}${c.sla ? " · " + esc(c.sla) + "ω" : ""}</span><span class="meta">${openCnt(c.name)} ανοιχτά</span></span>
-    </button>`).join("") : `<div class="empty">Δεν υπάρχουν πελάτες ακόμα.</div>`}</div>`;
-  const qi = $("#q"); qi.oninput = () => { S.q = qi.value; const p = qi.selectionStart; renderClients(); const n = $("#q"); n.focus(); n.setSelectionRange(p,p); };
+  m.innerHTML = `${mtop()}${demoBanner()}
+  <div class="page-head"><h1>Πελάτες</h1><div class="sp"></div>
+    <input class="field search" id="q" type="search" placeholder="Αναζήτηση πελάτη ή domain" value="${esc(S.q)}" aria-label="Αναζήτηση">
+    <button class="btn" id="addCl">${ICON.plus}Νέος πελάτης</button></div>
+  <p style="color:var(--dim);margin:-8px 0 16px;font-size:14px;max-width:70ch">Τα email που έρχονται από το domain ενός πελάτη συνδέονται αυτόματα μαζί του και παίρνουν το SLA του πακέτου του.</p>
+  <div class="table">
+    <div class="trow thead" style="grid-template-columns:minmax(0,1fr) 140px 120px 90px"><span>Πελάτης</span><span>Πακέτο</span><span class="c-type">Τηλέφωνο</span><span>Ανοιχτά</span></div>
+    ${rows.length ? rows.map(c => `<button class="trow" data-cid="${c.id}" style="grid-template-columns:minmax(0,1fr) 140px 120px 90px">
+      <span style="min-width:0"><span class="ttl" style="display:block">${esc(c.name)}</span><span class="tsub">${esc(c.domain || "χωρίς domain")}</span></span>
+      <span class="tsub">${esc(c.tier)}${+c.sla ? `, ${esc(c.sla)}ω` : ""}</span><span class="tsub c-type">${esc(c.phone || "—")}</span><span class="tsub">${openCnt(c.name)}</span></button>`).join("")
+      : `<div class="empty">${S.q ? "Κανένας πελάτης δεν ταιριάζει." : "Πρόσθεσε τον πρώτο σου πελάτη για να αντιστοιχίζονται αυτόματα τα email του."}</div>`}
+  </div>`;
+  const qi = $("#q"); qi.oninput = () => { S.q = qi.value; const p = qi.selectionStart; renderClients(m); const n = $("#q"); n.focus(); n.setSelectionRange(p,p); };
   $("#addCl").onclick = () => editClient();
-  $("#main").querySelectorAll(".ccard").forEach(b => b.onclick = () => editClient(S.clients.find(c => c.id === +b.dataset.id)));
+  m.querySelectorAll("[data-cid]").forEach(b => b.onclick = () => editClient(S.clients.find(c => c.id === +b.dataset.cid)));
+  m.querySelectorAll('[data-act="refresh"]').forEach(b => b.onclick = refresh);
 }
 function editClient(c){
   c = c || { name:"", domain:"", tier:"Business", sla:CFG.tierSla?.Business ?? 4, tech:TECHS[0]?.email || "", phone:"", notes:"" };
-  const close = modal(c.id ? "Επεξεργασία πελάτη" : "Νέος πελάτης", `
-    <label class="f">Επωνυμία<input name="name" required value="${esc(c.name)}"></label>
-    <label class="f">Domain email (πολλά με ;)<input name="domain" placeholder="example.gr; example.com" value="${esc(c.domain)}"></label>
-    <div class="grid2"><label class="f">Πακέτο<select name="tier" id="tierSel">${opt(TIERS, c.tier)}</select></label>
-    <label class="f">SLA απόκρισης (ώρες, 0 = καμία)<input name="sla" id="slaIn" type="number" min="0" step="0.5" value="${esc(c.sla)}"></label>
-    <label class="f">Τεχνικός<select name="tech">${opt([["","—"], ...TECHS.map(x => [x.email, x.name])], c.tech)}</select></label>
-    <label class="f">Τηλέφωνο<input name="phone" value="${esc(c.phone)}"></label></div>
-    <label class="f">Σημειώσεις<textarea name="notes" rows="3">${esc(c.notes)}</textarea></label>`,
+  const close = modal(c.id ? "Στοιχεία πελάτη" : "Νέος πελάτης", `
+    <label>Επωνυμία<input class="field" name="name" required value="${esc(c.name)}"></label>
+    <label>Domain email, πολλά χωρισμένα με ;<input class="field" name="domain" placeholder="example.gr; example.com" value="${esc(c.domain)}"></label>
+    <div class="grid2"><label>Πακέτο<select class="field" name="tier" id="tierSel">${opt(TIERS, c.tier)}</select></label>
+    <label>Μέγιστη πρώτη απόκριση, εργάσιμες ώρες<input class="field" name="sla" id="slaIn" type="number" min="0" step="0.5" value="${esc(c.sla)}"></label>
+    <label>Τεχνικός<select class="field" name="tech">${opt([["","Χωρίς"], ...TECHS.map(x => [x.email, x.name])], c.tech)}</select></label>
+    <label>Τηλέφωνο<input class="field" name="phone" value="${esc(c.phone)}"></label></div>
+    <label>Σημειώσεις<textarea class="field" name="notes" rows="3">${esc(c.notes)}</textarea></label>`,
     async fd => {
       const obj = { ...fd, domain:fd.domain.toLowerCase().replace(/\s+/g,""), sla:fd.sla === "" ? 0 : +fd.sla };
       if(c.id) obj.id = c.id;
       const r = await guard(() => API.saveClient(obj)); if(!r) return false;
       if(c.id) Object.assign(c, obj); else S.clients.push(r);
-      renderClients(); toast("Αποθηκεύτηκε");
+      render(); toast("Αποθηκεύτηκε");
     }, c.id ? `<button type="button" class="btn danger" id="delCl">Διαγραφή</button>` : "");
   $("#tierSel").onchange = e => { const v = CFG.tierSla?.[e.target.value]; if(v != null) $("#slaIn").value = v; };
-  if(c.id) $("#delCl").onclick = async () => {
-    if(!confirm(`Διαγραφή του πελάτη «${c.name}»; Τα tickets του παραμένουν.`)) return;
-    if(await guard(async () => { await API.deleteClient(c.id); return true; })){ S.clients = S.clients.filter(x => x.id !== c.id); close(); renderClients(); }
+  if(c.id) $("#delCl").onclick = () => {
+    const b = $("#delCl");
+    if(b.dataset.armed){ guard(async () => { await API.deleteClient(c.id); return true; }).then(ok => { if(ok){ S.clients = S.clients.filter(x => x.id !== c.id); close(); render(); toast("Ο πελάτης διαγράφηκε"); } }); }
+    else { b.dataset.armed = "1"; b.textContent = "Πάτα ξανά για διαγραφή"; }
   };
 }
 
-/* ---------------- shell ---------------- */
-function setTab(){ $("#tabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S.view)); }
-function render(){ setTab(); S.view === "tickets" ? renderTickets() : renderClients(); }
-async function reload(){ await guard(() => API.load()); render(); }
-
-function showLogin(){
-  $("#tabs").classList.add("hidden");
-  $("#main").innerHTML = `<div class="center"><div class="panel"><h1>PRAXIS TICKETS</h1>
-    <p style="color:var(--dim)">Σύνδεση με τον λογαριασμό Microsoft 365 της PRAXIS IT.</p>
-    <button class="btn" id="loginBtn" style="width:100%;padding:12px">Σύνδεση με Microsoft</button></div></div>`;
-  $("#loginBtn").onclick = () => API.login();
+/* ================= boot ================= */
+async function refresh(){ await guard(() => API.load()); if(S.open){ S.open = S.tickets.find(t => t.id === S.open.id) || null; if(S.open){ openTicket(S.open.id, false); return; } } render(); toast("Ενημερώθηκε"); }
+function route(){
+  const h = location.hash;
+  const m = h.match(/^#t(\d+)$/);
+  if(m && S.tickets.some(t => t.id === +m[1])){ openTicket(+m[1], false); return; }
+  S.open = null; S.view = ["dash","tickets","clients"].includes(h.slice(1)) ? h.slice(1) : "dash"; render();
 }
-function showSetup(){
-  $("#tabs").classList.add("hidden");
-  $("#main").innerHTML = `<div class="center"><div class="panel"><h1>ΠΡΩΤΗ ΡΥΘΜΙΣΗ</h1>
-    <p style="color:var(--dim)">Οι λίστες <b>Tickets</b>, <b>TicketComments</b> και <b>TicketClients</b> δεν υπάρχουν ακόμα στο site <b>${esc(CFG.sitePath)}</b>. Θα δημιουργηθούν με όλες τις στήλες.</p>
-    <button class="btn" id="setupBtn" style="width:100%;padding:12px">Δημιουργία λιστών</button></div></div>`;
-  $("#setupBtn").onclick = async () => {
-    $("#setupBtn").disabled = true; $("#setupBtn").textContent = "Δημιουργία…";
-    if(await guard(async () => { await API.setup(); return true; })){ toast("Οι λίστες δημιουργήθηκαν"); boot(); }
-    else { $("#setupBtn").disabled = false; $("#setupBtn").textContent = "Δοκίμασε ξανά"; }
-  };
-}
+function gate(inner){ $("#root").innerHTML = `<div class="gate"><div class="card"><div class="logo">PRAXIS TICKETS</div>${inner}</div></div>`; }
 async function boot(){
-  if(DEMO) $("#demoBanner").classList.remove("hidden");
   const st = await guard(() => API.start());
-  if(st === "login") return showLogin();
-  if(st === "setup") return showSetup();
-  if(st !== "ok"){ $("#main").innerHTML = `<div class="empty">Δεν ήταν δυνατή η σύνδεση με το SharePoint. Έλεγξε το config.js.</div>`; return; }
-  $("#tabs").classList.remove("hidden");
-  $("#meBtn").textContent = initials(S.me.name); $("#meBtn").title = S.me.name + " — πάτα για αποσύνδεση";
-  await reload();
-  const m = location.hash.match(/^#t(\d+)$/); if(m) openTicket(+m[1]);
+  if(st === "login"){ gate(`<p>Συνδέσου με τον λογαριασμό Microsoft 365 της PRAXIS IT.</p><button class="btn" id="loginBtn">Σύνδεση με Microsoft</button>`); $("#loginBtn").onclick = () => API.login(); return; }
+  if(st !== "ok"){ gate(`<p>Δεν ήταν δυνατή η σύνδεση με το SharePoint. Έλεγξε τη σύνδεση στο internet και δοκίμασε ξανά.</p><button class="btn" onclick="location.reload()">Δοκιμή ξανά</button>`); return; }
+  await guard(() => API.load());
+  renderShell(); route();
 }
-
-$("#tabs").onclick = e => { const b = e.target.closest("button"); if(!b) return; S.view = b.dataset.v; S.q = ""; render(); };
-$("#refreshBtn").onclick = async () => { await reload(); if(S.open){ S.open = S.tickets.find(t => t.id === S.open.id); if(S.open) openTicket(S.open.id); } toast("Ανανεώθηκε"); };
-$("#newBtnTop").onclick = newTicket; $("#fab").onclick = newTicket;
-$("#meBtn").onclick = () => { if(S.me.name && confirm(`Συνδεδεμένος ως ${S.me.name}.\nΑποσύνδεση;`)) API.logout(); };
-document.addEventListener("keydown", e => { if(e.key === "Escape"){ if($(".modal")){ $("#mov").click(); } else if(S.open) closeDrawer(); } });
-document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && !S.open && S.me.name && !DEMO) reload(); });
-setInterval(() => { if(document.visibilityState === "visible" && !S.open && !$(".modal") && S.me.name && !DEMO) reload(); }, 120000);
+window.addEventListener("popstate", route);
+document.addEventListener("keydown", e => { if(e.key === "Escape" && $("#mov")) $("#mov").click(); });
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && S.me.name && !DEMO && S.view !== "ticket" && !$("#mov")) API.load().then(render).catch(() => {}); });
+setInterval(() => { if(document.visibilityState === "visible" && S.me.name && !DEMO && S.view !== "ticket" && !$("#mov")) API.load().then(render).catch(() => {}); }, 120000);
 boot();
 </script>
 </body>
