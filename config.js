@@ -5,7 +5,7 @@
 // ============================================================
 window.PRAXIS_CONFIG = {
   tenantId: "83452b18-517e-4b31-a9e8-3cd60d2a8364",          // Directory (tenant) ID
-  clientId: "",          // Application (client) ID της εφαρμογής "PRAXIS Tickets"
+  clientId: "d20f0323-5238-44e8-acd6-3c542598c8ad",        // Application (client) ID της εφαρμογής "PRAXIS Tickets"
 
   // SharePoint site όπου ζουν οι λίστες Tickets / TicketComments / Clients
   siteHost: "reinaldogr.sharepoint.com",
@@ -22,3 +22,6 @@ window.PRAXIS_CONFIG = {
   // Προεπιλεγμένες ώρες απόκρισης SLA ανά πακέτο (άλλαξέ τες ώστε να ταιριάζουν στο MSA)
   tierSla: { "Χωρίς σύμβαση": 0, "Starter": 8, "Business": 4, "Professional": 2, "Enterprise": 2 }
 };
+
+// Συμβατότητα: η βιβλιοθήκη MSAL δηλώνεται ως window.msal
+Object.defineProperty(window, "msalBrowser", { get: () => window.msal, configurable: true });
