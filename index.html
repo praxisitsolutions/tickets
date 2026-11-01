@@ -277,6 +277,11 @@ button.trow:hover{background:var(--sunken)}
 .rt .nowrap{white-space:nowrap}
 .rt tfoot td{border-bottom:0;border-top:2px solid var(--line-strong);font-weight:600}
 .print-head,.print-foot{display:none}
+.ph-sub{display:block;font-size:14px;font-weight:500;color:var(--dim);margin-top:2px;letter-spacing:0}
+.portal-note{color:var(--dim);font-size:14px;margin:-10px 0 16px}
+a.btn{text-decoration:none}
+.portal-reply .btn{display:inline-flex}
+.pf-users{font-size:12px;color:var(--dim);margin-top:4px}
 @media print{
   @page{margin:14mm}
   html,body{background:#fff!important;color:#111!important}
@@ -315,6 +320,9 @@ button.trow:hover{background:var(--sunken)}
 <script>
 "use strict";
 const CFG = window.PRAXIS_CONFIG || {};
+const STAFF_DOMAINS = (CFG.staffDomains || ["praxisit.gr"]).map(d => d.toLowerCase());
+const isStaff = email => STAFF_DOMAINS.includes(((email || "").split("@")[1] || "").toLowerCase());
+const SITE_ID = CFG.siteId || "reinaldogr.sharepoint.com,ab7ac929-ebd0-498f-bdcf-140b5b98d502,921aa7a5-b029-4246-8e71-4f375493710e";
 const DEMO = !CFG.clientId || !CFG.tenantId || /[?&]demo\b/.test(location.search);
 
 /* ================= vocabulary ================= */
@@ -340,7 +348,7 @@ const SLA_M = CFG.slaMatrix || {"P1 Κρίσιμο":{response:60,resolve:240},"P
 const BH = CFG.businessHours || {start:9,end:17,days:[1,2,3,4,5]};
 const HOLI = new Set(CFG.holidays || []);
 
-const S = { view:"dash", filter:"open", q:"", tickets:[], clients:[], me:{name:"",email:""}, open:null, comments:[], time:[], timeMissing:false };
+const S = { view:"dash", filter:"open", q:"", tickets:[], clients:[], me:{name:"",email:""}, open:null, comments:[], time:[], timeMissing:false, customer:false };
 const $ = (s, r=document) => r.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ticketNo = id => PREFIX + String(id).padStart(5,"0");
@@ -439,8 +447,8 @@ const T_MAP = {title:"Title",no:"TicketNo",status:"Status",priority:"Priority",t
   desc:"Description",tech:"Technician",source:"Source",due:"DueDate",resolveDue:"ResolveDue",resolved:"ResolvedDate",
   firstResp:"FirstResponse",last:"LastActivity",slaAlerted:"SLAAlerted",resolveAlerted:"ResolveAlerted"};
 function toFields(obj, map){ const o = {}; for(const k in obj) if(map[k]) o[map[k]] = obj[k] === "" ? null : obj[k]; return o; }
-function fromClient(it){ const f = it.fields || {}; return { id:+it.id, name:f.Title || "", domain:f.Domain || "", tier:f.Tier || "Χωρίς σύμβαση", sla:f.SLAHours ?? "", tech:f.DefaultTechnician || "", phone:f.Phone || "", notes:f.Notes || "" }; }
-const C_MAP = {name:"Title",domain:"Domain",tier:"Tier",sla:"SLAHours",tech:"DefaultTechnician",phone:"Phone",notes:"Notes"};
+function fromClient(it){ const f = it.fields || {}; return { id:+it.id, name:f.Title || "", domain:f.Domain || "", tier:f.Tier || "Χωρίς σύμβαση", sla:f.SLAHours ?? "", tech:f.DefaultTechnician || "", phone:f.Phone || "", notes:f.Notes || "", portalUsers:f.PortalUsers || "", portalSynced:f.PortalSynced || "", portalGroup:+f.PortalGroupId || 0 }; }
+const C_MAP = {name:"Title",domain:"Domain",tier:"Tier",sla:"SLAHours",tech:"DefaultTechnician",phone:"Phone",notes:"Notes",portalUsers:"PortalUsers"};
 function fromComment(it){ const f = it.fields || {}; return { id:+it.id, ref:+f.TicketRef, body:f.Body || "", dir:f.Direction || DIR.NOTE, author:f.AuthorName || "", sent:!!f.Sent, created:f.Created }; }
 
 function fromTime(it){ const f = it.fields || {}; return { id:+it.id, ref:+f.TicketRef, no:f.TicketNo || "", client:f.ClientName || "", tech:f.Technician || "", techName:f.TechName || "",
@@ -481,12 +489,14 @@ const Graph = {
     await initAuth();
     if(!account) return "login";
     S.me = { name: account.name || account.username, email: (account.username || "").toLowerCase() };
-    siteId = (await g(`/sites/${CFG.siteHost}:${CFG.sitePath}`)).id;
+    S.customer = !isStaff(S.me.email);
+    try { siteId = (await g(`/sites/${CFG.siteHost}:${CFG.sitePath}`)).id; } catch(e){ if(e.message === "redirect") throw e; siteId = SITE_ID; }
     return "ok";
   },
   login(){ return msalApp.loginRedirect({ scopes:SCOPES }); },
   logout(){ return msalApp.logoutRedirect({ account }); },
   async load(){
+    if(S.customer){ S.tickets = (await allItems("Tickets")).map(fromTicket); S.clients = []; S.time = []; S.timeMissing = false; return; }
     const [t, c, tt] = await Promise.all([allItems("Tickets"), allItems("TicketClients"), allItems("TicketTime").catch(e => e.status === 404 ? null : Promise.reject(e))]);
     S.tickets = t.map(fromTicket); S.clients = c.map(fromClient); S.timeMissing = !tt; S.time = (tt || []).map(fromTime);
   },
@@ -567,13 +577,13 @@ const Demo = (() => {
   ];
   let nT = 15, nC = 6, nCl = 5, nTe = 9;
   return {
-    async start(){ S.me = { name:"Reinaldo Dhami", email:"adamis@praxisit.gr" }; return "ok"; },
-    async load(){ S.tickets = structuredClone(tickets); S.clients = structuredClone(clients); S.time = structuredClone(time); },
+    async start(){ const portal = /[?&]portal\b/.test(location.search); S.me = portal ? { name:"Μαρία Κωνσταντίνου", email:"maria@alfalogistics.gr" } : { name:"Reinaldo Dhami", email:"adamis@praxisit.gr" }; S.customer = portal; return "ok"; },
+    async load(){ if(S.customer){ S.tickets = structuredClone(tickets.filter(t => t.client === "Alfa Logistics ΑΕ")); S.clients = []; S.time = []; return; } S.tickets = structuredClone(tickets); S.clients = structuredClone(clients); S.time = structuredClone(time); },
     async addTime(e){ const x = { ...e, id:nTe++ }; time.push(x); return {...x}; },
     async updateTime(id, e){ Object.assign(time.find(x => x.id === id), e); },
     async deleteTime(id){ time.splice(time.findIndex(x => x.id === id), 1); },
     async deleteTicket(id){ tickets.splice(tickets.findIndex(t => t.id === id), 1); for(let i = comments.length - 1; i >= 0; i--) if(comments[i].ref === id) comments.splice(i, 1); for(let i = time.length - 1; i >= 0; i--) if(time[i].ref === id) time.splice(i, 1); },
-    async comments(id){ return comments.filter(c => c.ref === id).map(c => ({...c})); },
+    async comments(id){ return comments.filter(c => c.ref === id && (!S.customer || c.dir === DIR.IN || c.dir === DIR.OUT)).map(c => ({...c})); },
     async createTicket(o){ const t = { ...o, id:nT, no:ticketNo(nT), created:o.created || nowIso() }; nT++; tickets.unshift(t); return {...t}; },
     async updateTicket(id, o){ Object.assign(tickets.find(t => t.id === id), o); },
     async addComment(c){ const x = { ...c, id:nC++, created:nowIso(), sent:c.dir === DIR.OUT }; comments.push(x); return {...x}; },
@@ -665,6 +675,13 @@ function renderShell(){
 function go(view, push = true){ S.view = view; S.q = ""; if(push) history.pushState(null, "", "#" + view); render(); }
 function mtop(){ return `<div class="mtop"><div class="logo">Praxis<b>IT</b></div><div class="sp"></div>${timerChip()}<button class="icon-btn" data-act="bell" aria-label="Ειδοποιήσεις"></button><button class="icon-btn" data-act="theme" aria-label="Σκούρο ή φωτεινό θέμα">${ICON.moon}</button><button class="icon-btn" data-act="refresh" aria-label="Ανανέωση">${ICON.refresh}</button></div>`; }
 function render(){
+  if(S.customer){
+    const m = $("#main"); $("#navCount").textContent = S.tickets.filter(t => OPEN.includes(t.status)).length || "";
+    renderPortal(m);
+    m.querySelectorAll('[data-act="refresh"]').forEach(b => b.onclick = refresh);
+    m.querySelectorAll('[data-act="theme"]').forEach(b => b.onclick = toggleTheme);
+    window.scrollTo(0, 0); return;
+  }
   document.querySelectorAll("[data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === S.view));
   $("#navCount").textContent = fcount("open") || "";
   const m = $("#main");
@@ -864,11 +881,11 @@ function renderTicket(m){
 function renderTimeline(){
   const t = S.open, el = $("#tl"); if(!el || !t) return;
   const items = [{ dir:DIR.IN, author:t.reqName || t.reqEmail || "Πελάτης", body:t.desc, created:t.created, first:true },
-    ...(S.comments || []).slice().sort((a,b) => new Date(a.created) - new Date(b.created))];
+    ...(S.comments || []).filter(c => !S.customer || c.dir === DIR.IN || c.dir === DIR.OUT).slice().sort((a,b) => new Date(a.created) - new Date(b.created))];
   el.innerHTML = items.map(c => {
     if(c.dir === DIR.SYS) return `<div class="ev sys"><span class="dot"></span><div class="who2">${esc(c.body)}, ${esc(c.author)}, ${fmt(c.created)}</div></div>`;
     const cls = c.dir === DIR.IN ? "in" : c.dir === DIR.OUT ? "out" : "note";
-    const lab = c.first ? "άνοιξε το αίτημα" : c.dir === DIR.IN ? "απάντησε" : c.dir === DIR.OUT ? (c.sent ? "απάντησε στον πελάτη, εστάλη" : "απάντησε στον πελάτη, σε αναμονή αποστολής") : "εσωτερική σημείωση";
+    const lab = c.first ? "άνοιξε το αίτημα" : c.dir === DIR.IN ? "απάντησε" : c.dir === DIR.OUT ? (S.customer ? "απάντησε, Praxis IT" : c.sent ? "απάντησε στον πελάτη, εστάλη" : "απάντησε στον πελάτη, σε αναμονή αποστολής") : "εσωτερική σημείωση";
     return `<div class="ev ${cls}"><span class="dot"></span><div class="who2"><b>${esc(c.author || "—")}</b> ${lab}, ${fmt(c.created)}</div><div class="msg">${esc(c.body || "(χωρίς κείμενο)")}</div></div>`;
   }).join("");
 }
@@ -1273,9 +1290,9 @@ async function checkChanges(){
     const now = t.last || t.created;
     if(now && before && new Date(now) - new Date(before) > 5000){
       const cs = await API.comments(t.id).catch(() => []);
-      const r = cs.filter(c => c.dir === DIR.IN && new Date(c.created) > new Date(before)).sort((a,b) => new Date(b.created) - new Date(a.created))[0];
+      const r = cs.filter(c => c.dir === (S.customer ? DIR.OUT : DIR.IN) && new Date(c.created) > new Date(before)).sort((a,b) => new Date(b.created) - new Date(a.created))[0];
       if(r){
-        notify(`Απάντηση πελάτη στο ${t.no}`, (r.body || "").replace(/\s+/g," ").slice(0,140) || t.title, "#t" + t.id, { once:`reply:${r.id}` });
+        notify(S.customer ? `Νέα απάντηση στο ${t.no}` : `Απάντηση πελάτη στο ${t.no}`, (r.body || "").replace(/\s+/g," ").slice(0,140) || t.title, "#t" + t.id, { once:`reply:${r.id}` });
         if(S.open && S.open.id === t.id && S.view === "ticket"){ S.comments = cs; renderTimeline(); }
       }
     }
@@ -1301,10 +1318,87 @@ async function poll(){
   const editing = !!$("#mov") || S.view === "ticket";
   try { await API.load(); } catch(_){ return; }
   if(S.open){ const fresh = S.tickets.find(t => t.id === S.open.id); if(fresh){ const i = S.tickets.indexOf(fresh); S.tickets[i] = Object.assign(S.open, fresh); } }
-  await checkChanges(); checkSla(); checkTimer();
+  await checkChanges(); if(!S.customer){ checkSla(); checkTimer(); }
   if(!editing) render();
 }
 
+
+/* ================= customer portal (guests) ================= */
+const SUPPORT = CFG.supportEmail || "support@praxisit.gr";
+const PORTAL_STATUS = {"Νέο":"Καταχωρήθηκε","Ανατέθηκε":"Ανατέθηκε σε τεχνικό","Σε εξέλιξη":"Σε εξέλιξη","Αναμονή πελάτη":"Περιμένουμε απάντησή σας",
+  "Αναμονή προμηθευτή":"Αναμονή προμηθευτή","Επιλύθηκε":"Επιλύθηκε","Κλειστό":"Ολοκληρώθηκε"};
+const pStatus = s => `<span class="status ${ST_CLASS[s] || ""}">${esc(PORTAL_STATUS[s] || s)}</span>`;
+const mailto = (subject, body) => `mailto:${SUPPORT}?subject=${encodeURIComponent(subject)}${body ? `&body=${encodeURIComponent(body)}` : ""}`;
+const portalClient = () => (S.tickets.find(t => t.client) || {}).client || "";
+let pFilter = "open";
+function renderPortalShell(){
+  $("#root").innerHTML = `
+  <div class="shell">
+    <aside class="side">
+      <div class="logo">Praxis<b>IT</b><span>Πύλη υποστήριξης</span></div>
+      <nav class="nav" aria-label="Κύριο μενού"><button data-v="tickets" class="on">${ICON.tickets}Αιτήματα <span class="count" id="navCount"></span></button></nav>
+      <div class="side-foot">
+        <button id="themeBtn">${ICON.moon}Σκούρο / φωτεινό θέμα</button>
+        <div class="who"><b>${esc(S.me.name)}</b>${esc(S.me.email)}</div>
+        <button id="logoutBtn">Αποσύνδεση</button>
+      </div>
+    </aside>
+    <main id="main"></main>
+  </div>`;
+  document.querySelectorAll("[data-v]").forEach(b => b.onclick = () => { S.open = null; go("tickets"); });
+  $("#themeBtn").onclick = toggleTheme;
+  $("#logoutBtn").onclick = () => API.logout();
+}
+function portalTop(){ return `<div class="mtop"><div class="logo">Praxis<b>IT</b></div><div class="sp"></div><button class="icon-btn" data-act="theme" aria-label="Σκούρο ή φωτεινό θέμα">${ICON.moon}</button><button class="icon-btn" data-act="refresh" aria-label="Ανανέωση">${ICON.refresh}</button></div>`; }
+function renderPortal(m){
+  if(S.view === "ticket" && S.open) return renderPortalTicket(m);
+  const open = t => OPEN.includes(t.status);
+  const rows = S.tickets.filter(t => pFilter === "all" ? true : pFilter === "open" ? open(t) : !open(t))
+    .sort((a,b) => new Date(b.last || b.created) - new Date(a.last || a.created));
+  const cnt = k => S.tickets.filter(t => k === "all" ? true : k === "open" ? open(t) : !open(t)).length;
+  const client = portalClient();
+  m.innerHTML = `${portalTop()}
+  <div class="page-head"><h1>Αιτήματα${client ? `<small class="ph-sub">${esc(client)}</small>` : ""}</h1><div class="sp"></div>
+    <a class="btn cta" href="${mailto("Νέο αίτημα: ", "Περιγράψτε το πρόβλημα ή το αίτημα:\n\n\nΤηλέφωνο επικοινωνίας:\n")}">${ICON.plus}Νέο αίτημα</a></div>
+  <p class="portal-note">Νέο αίτημα ανοίγει με email στο ${esc(SUPPORT)}. Θα εμφανιστεί εδώ μέσα σε λίγα λεπτά.</p>
+  <div class="filters" role="tablist">${[["open","Ανοιχτά"],["done","Ολοκληρωμένα"],["all","Όλα"]].map(([k,l]) => `<button role="tab" class="${pFilter === k ? "on" : ""}" aria-selected="${pFilter === k}" data-pf="${k}">${l}<em>${cnt(k)}</em></button>`).join("")}</div>
+  <div class="table">
+    <div class="trow thead" style="grid-template-columns:96px minmax(0,1fr) 190px 140px"><span class="c-no">Αριθμός</span><span>Θέμα</span><span class="c-status">Κατάσταση</span><span class="c-type">Τελευταία κίνηση</span></div>
+    ${rows.length ? rows.map(t => `<button class="trow" data-id="${t.id}" style="grid-template-columns:96px minmax(0,1fr) 190px 140px">
+      <span class="tno c-no">${esc(t.no)}</span>
+      <span style="min-width:0"><span class="ttl" style="display:block">${esc(t.title)}</span><span class="tsub">${esc(t.reqName || t.reqEmail || "")}${t.reqName || t.reqEmail ? ", " : ""}${fmt(t.created)}</span></span>
+      <span class="c-status">${pStatus(t.status)}</span>
+      <span class="tsub c-type">${ago(t.last || t.created)}</span></button>`).join("")
+      : `<div class="empty">${S.tickets.length ? "Δεν υπάρχουν αιτήματα σε αυτή την προβολή." : "Δεν υπάρχουν ακόμα αιτήματα για την εταιρεία σας."}</div>`}
+  </div>`;
+  m.querySelectorAll("[data-pf]").forEach(b => b.onclick = () => { pFilter = b.dataset.pf; renderPortal(m); });
+  bindCommon(m);
+}
+function renderPortalTicket(m){
+  const t = S.open;
+  m.innerHTML = `${portalTop()}
+  <button class="back" id="backBtn">${ICON.back}Αιτήματα</button>
+  <div class="detail">
+    <div style="min-width:0">
+      <div class="dhead"><div class="meta">${esc(t.no)}, ${fmt(t.created)}</div><h1>${esc(t.title)}</h1>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">${pStatus(t.status)}</div></div>
+      <div class="timeline" id="tl"><div class="spin" style="margin:24px auto"></div></div>
+      <div class="composer portal-reply">
+        <p style="margin:2px 0 12px;color:var(--dim);font-size:14px">${t.status === "Κλειστό" ? "Το αίτημα έχει ολοκληρωθεί. Αν το θέμα εμφανίστηκε ξανά, απαντήστε με email και θα ανοίξει ξανά." : "Για να απαντήσετε ή να στείλετε στοιχεία, στείλτε email. Η απάντησή σας θα εμφανιστεί εδώ."}</p>
+        <a class="btn" href="${mailto(`[${t.no}] ${t.title}`)}">Απάντηση με email</a>
+      </div>
+    </div>
+    <div class="props">
+      <div class="prop"><span class="k">Κατάσταση</span><div class="v">${pStatus(t.status)}</div></div>
+      <div class="prop"><span class="k">Τεχνικός</span><div class="v">${t.tech ? esc(techName(t.tech)) : "Θα ανατεθεί σύντομα"}</div></div>
+      <div class="prop"><span class="k">Άνοιξε από</span><div class="v">${esc(t.reqName || t.reqEmail || "—")}</div></div>
+      <div class="prop"><span class="k">Καταχωρήθηκε</span><div class="v">${fmt(t.created)}</div></div>
+      ${t.resolved ? `<div class="prop"><span class="k">Επιλύθηκε</span><div class="v">${fmt(t.resolved)}</div></div>` : ""}
+    </div>
+  </div>`;
+  $("#backBtn").onclick = () => { S.open = null; go("tickets"); };
+  if(S.comments) renderTimeline();
+}
 
 /* ================= modal ================= */
 function modal(title, html, onSave, extra){
@@ -1373,6 +1467,11 @@ function renderClients(m){
   m.querySelectorAll("[data-cid]").forEach(b => b.onclick = () => editClient(S.clients.find(c => c.id === +b.dataset.cid)));
   m.querySelectorAll('[data-act="refresh"]').forEach(b => b.onclick = refresh);
 }
+function portalStatus(c){
+  const norm = v => (v || "").toLowerCase().replace(/[\s,]+/g, ";").replace(/;+/g, ";").replace(/^;|;$/g, "");
+  if(!c.id || !norm(c.portalUsers)) return "Βλέπουν όλα τα αιτήματα της εταιρείας τους, χωρίς ώρες εργασίας και εσωτερικές σημειώσεις. Θα λάβουν email πρόσκλησης.";
+  return norm(c.portalUsers) === norm(c.portalSynced) ? "Η πρόσβαση είναι ενεργή για αυτούς τους χρήστες." : "Η πρόσβαση ενημερώνεται, σε 1–2 λεπτά.";
+}
 function editClient(c){
   c = c || { name:"", domain:"", tier:"Business", sla:CFG.tierSla?.Business ?? 4, tech:TECHS[0]?.email || "", phone:"", notes:"" };
   const close = modal(c.id ? "Στοιχεία πελάτη" : "Νέος πελάτης", `
@@ -1382,9 +1481,14 @@ function editClient(c){
     <label>Μέγιστη πρώτη απόκριση, εργάσιμες ώρες<input class="field" name="sla" id="slaIn" type="number" min="0" step="0.5" value="${esc(c.sla)}"></label>
     <label>Τεχνικός<select class="field" name="tech">${opt([["","Χωρίς"], ...TECHS.map(x => [x.email, x.name])], c.tech)}</select></label>
     <label>Τηλέφωνο<input class="field" name="phone" value="${esc(c.phone)}"></label></div>
-    <label>Σημειώσεις<textarea class="field" name="notes" rows="3">${esc(c.notes)}</textarea></label>`,
+    <label>Σημειώσεις<textarea class="field" name="notes" rows="3">${esc(c.notes)}</textarea></label>
+    <label>Χρήστες πύλης πελάτη, email χωρισμένα με ;<textarea class="field" name="portalUsers" rows="2" placeholder="maria@example.gr; giorgos@example.gr">${esc(c.portalUsers || "")}</textarea>
+      <span class="pf-users">${portalStatus(c)}</span></label>`,
     async fd => {
-      const obj = { ...fd, domain:fd.domain.toLowerCase().replace(/\s+/g,""), sla:fd.sla === "" ? 0 : +fd.sla };
+      const users = (fd.portalUsers || "").toLowerCase().split(/[\s,;]+/).filter(x => x.includes("@"));
+      const bad = users.filter(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+      if(bad.length){ toast("Μη έγκυρο email: " + bad.join(", "), true); return false; }
+      const obj = { ...fd, domain:fd.domain.toLowerCase().replace(/\s+/g,""), sla:fd.sla === "" ? 0 : +fd.sla, portalUsers:[...new Set(users)].join(";") };
       if(c.id) obj.id = c.id;
       const r = await guard(() => API.saveClient(obj)); if(!r) return false;
       if(c.id) Object.assign(c, obj); else S.clients.push(r);
@@ -1404,7 +1508,7 @@ function route(){
   const h = location.hash;
   const m = h.match(/^#t(\d+)$/);
   if(m && S.tickets.some(t => t.id === +m[1])){ openTicket(+m[1], false); return; }
-  S.open = null; S.view = ["dash","tickets","clients","reports"].includes(h.slice(1)) ? h.slice(1) : "dash"; render();
+  S.open = null; S.view = S.customer ? "tickets" : ["dash","tickets","clients","reports"].includes(h.slice(1)) ? h.slice(1) : "dash"; render();
 }
 function gate(inner){ $("#root").innerHTML = `<div class="gate"><div class="card"><div class="logo">Praxis<b>IT</b><span>Tickets</span></div>${inner}</div></div>`; }
 async function boot(){
@@ -1412,8 +1516,9 @@ async function boot(){
   if(st === "login"){ gate(`<p>Συνδέσου με τον λογαριασμό Microsoft 365 της PRAXIS IT.</p><button class="btn" id="loginBtn">Σύνδεση με Microsoft</button>`); $("#loginBtn").onclick = () => API.login(); return; }
   if(st !== "ok"){ gate(`<p>Δεν ήταν δυνατή η σύνδεση με το SharePoint. Έλεγξε τη σύνδεση στο internet και δοκίμασε ξανά.</p><button class="btn" onclick="location.reload()">Δοκιμή ξανά</button>`); return; }
   await guard(() => API.load());
-  renderShell(); route();
-  takeSnap(); setupSW(); checkSla(); checkTimer();
+  if(S.customer) renderPortalShell(); else renderShell();
+  route();
+  takeSnap(); setupSW(); if(!S.customer){ checkSla(); checkTimer(); }
 }
 window.addEventListener("popstate", route);
 document.addEventListener("keydown", e => { if(e.key === "Escape" && $("#mov")) $("#mov").click(); });
