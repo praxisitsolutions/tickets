@@ -11,7 +11,7 @@ window.PRAXIS_CONFIG = {
 
   // Τεχνικοί (email όπως στο Microsoft 365)
   technicians: [
-    { name: "Reinaldo Dhami", email: "adamis@praxisit.gr" }
+    { name: "Andreas Damis", email: "adamis@praxisit.gr" }
   ],
 
   ticketPrefix: "PRX-",
