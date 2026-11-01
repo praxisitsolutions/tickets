@@ -252,6 +252,8 @@ button.trow:hover{background:var(--sunken)}
 .modal label.check{flex-direction:row;align-items:center;gap:8px;color:var(--text);font-weight:500}
 .modal label.check input{width:18px;height:18px;accent-color:var(--primary)}
 .tm-ticket{font-weight:600;font-size:14px}
+.modal .durrow{align-items:end}
+.modal .durrow .computed{margin:0 0 10px}
 .tm-ticket span{font-weight:400;color:var(--dim);font-size:13px}
 /* ---------- reports ---------- */
 .rp-controls{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
@@ -296,6 +298,8 @@ button.trow:hover{background:var(--sunken)}
 @media (max-width:860px){
   .modal .grid3{grid-template-columns:1fr 1fr}
   .modal .grid3 label:first-child{grid-column:1 / span 2}
+  .modal .durrow label:first-child{grid-column:auto}
+  .modal .durrow .computed{grid-column:1 / span 2;margin:0}
   .rp-row{grid-template-columns:1fr 1fr}
   .rp-row label{min-width:0}
   .rp-dash{grid-template-columns:1fr}
@@ -1014,7 +1018,11 @@ function timeModal(t, e, pre = {}){
       <label>Από<input class="field" type="time" name="from" required value="${s.time}"></label>
       <label>Έως<input class="field" type="time" name="to" required value="${en.time}"></label>
     </div>
-    <div class="computed" id="tm-dur" aria-live="polite"></div>
+    <div class="grid3 durrow">
+      <label>Ή διάρκεια: ώρες<input class="field" type="number" inputmode="numeric" min="0" max="23" step="1" id="tm-h" placeholder="0"></label>
+      <label>λεπτά<input class="field" type="number" inputmode="numeric" min="0" max="59" step="5" id="tm-m" placeholder="0"></label>
+      <div class="computed" id="tm-dur" aria-live="polite"></div>
+    </div>
     <div class="grid2">
       <label>Τύπος εργασίας<select class="field" name="kind">${opt(WORK_TYPES, e ? e.kind : "Απομακρυσμένα")}</select></label>
       <label>Τεχνικός<select class="field" name="tech">${opt(techOpts, e ? e.tech : S.me.email)}</select></label>
@@ -1040,12 +1048,26 @@ function timeModal(t, e, pre = {}){
     if(min < 1 || min > 24*60){ toast("Η διάρκεια πρέπει να είναι από 1 λεπτό έως 24 ώρες.", true); return null; }
     return { start, end, min };
   }
-  const upd = () => {
+  const durIn = () => {
+    const h = Math.max(0, parseInt($("#tm-h").value || "0", 10) || 0), mi = Math.max(0, parseInt($("#tm-m").value || "0", 10) || 0), tot = h*60 + mi;
+    if(!tot) return;
+    const F = n => f.querySelector(`[name="${n}"]`);
+    if(!F("date").value) F("date").value = athensParts(nowIso()).date;
+    let start;
+    if(F("from").value) start = fromLocal(F("date").value, F("from").value);
+    else { start = new Date(Date.now() - tot*60000); const p = athensParts(start.toISOString()); F("date").value = p.date; F("from").value = p.time; start = fromLocal(p.date, p.time); }
+    F("to").value = athensParts(new Date(start.getTime() + tot*60000).toISOString()).time;
+    upd(true);
+  };
+  $("#tm-h").oninput = durIn; $("#tm-m").oninput = durIn;
+  const upd = (fromDur) => {
     const fd = Object.fromEntries(new FormData(f)); if(!fd.date || !fd.from || !fd.to){ $("#tm-dur").textContent = ""; return; }
     const start = fromLocal(fd.date, fd.from); let end = fromLocal(fd.date, fd.to); const next = end < start; if(next) end = fromLocal(addDays(fd.date, 1), fd.to);
-    $("#tm-dur").textContent = `Διάρκεια ${fmtDur((end - start) / 60000)} ώρες${next ? ", λήγει την επόμενη ημέρα" : ""}`;
+    const mins = Math.round((end - start) / 60000);
+    $("#tm-dur").textContent = `Διάρκεια ${fmtDur(mins)} ώρες${next ? ", λήγει την επόμενη ημέρα" : ""}`;
+    if(fromDur !== true){ $("#tm-h").value = Math.floor(mins/60); $("#tm-m").value = mins % 60; }
   };
-  f.querySelectorAll('input[type="date"],input[type="time"]').forEach(i => i.oninput = upd); upd();
+  f.querySelectorAll('input[type="date"],input[type="time"]').forEach(i => i.oninput = () => upd()); upd();
   if(e) $("#tm-del").onclick = () => { const b = $("#tm-del");
     if(b.dataset.armed){ guard(async () => { await API.deleteTime(e.id); return true; }).then(ok => { if(ok){ S.time = S.time.filter(x => x.id !== e.id); close(); render(); toast("Η καταχώρηση διαγράφηκε"); } }); }
     else { b.dataset.armed = "1"; b.textContent = "Πάτα ξανά για διαγραφή"; } };
