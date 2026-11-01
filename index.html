@@ -283,6 +283,23 @@ a.btn{text-decoration:none}
 .portal-reply .btn{display:inline-flex}
 .portal-hint{margin:2px 2px 8px;color:var(--dim);font-size:14px}
 .pending-row{opacity:.75}
+.attach{cursor:pointer;position:relative}
+.attach svg{color:var(--orange)}
+.attach.busy{opacity:.6;pointer-events:none}
+.attach.busy::after{content:"…"}
+.flist{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.fitem{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);color:var(--text);text-decoration:none;align-items:center}
+.fitem:hover{background:var(--sunken)}
+.fitem svg{color:var(--orange);grid-row:1 / span 2}
+.fitem .fn{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--primary)}
+.fitem .fm{font-size:12px;color:var(--dim);grid-column:2}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-strong);background:var(--sunken);border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;max-width:100%}
+.chip svg{color:var(--orange);flex:none}
+.chip small{color:var(--dim)}
+.chip button{border:0;background:none;color:var(--dim);font-size:16px;line-height:1;padding:2px 6px;border-radius:999px}
+.chip button:hover{color:var(--bad)}
+.portal-reply .crow{justify-content:flex-start}
 .modal .acts{flex-wrap:wrap;align-items:center}
 .mlink{color:var(--primary);font-size:14px;text-decoration:underline;text-underline-offset:3px}
 .ev .who2 .pend{color:var(--warn)}
@@ -334,6 +351,9 @@ const CFG = window.PRAXIS_CONFIG || {};
 const STAFF_DOMAINS = (CFG.staffDomains || ["praxisit.gr"]).map(d => d.toLowerCase());
 const isStaff = email => STAFF_DOMAINS.includes(((email || "").split("@")[1] || "").toLowerCase());
 const SITE_ID = CFG.siteId || "reinaldogr.sharepoint.com,ab7ac929-ebd0-498f-bdcf-140b5b98d502,921aa7a5-b029-4246-8e71-4f375493710e";
+const DRIVE_FILES = CFG.filesDrive || "b!Kcl6q9Drj0m9zxQLW5jVAqWnGpIpsEZCjnFPN1STcQ6MBq_H59JcQ6OZDpCLZkfp";
+const DRIVE_UPLOADS = CFG.uploadsDrive || "b!Kcl6q9Drj0m9zxQLW5jVAqWnGpIpsEZCjnFPN1STcQ5WdlCOKAUaSbKARUojARq7";
+const MAX_FILE_MB = 25, MAX_FILES = 10;
 const DEMO = !CFG.clientId || !CFG.tenantId || /[?&]demo\b/.test(location.search);
 
 /* ================= vocabulary ================= */
@@ -468,7 +488,9 @@ const EN = {
   "Τι συμβαίνει, από πότε, ποιους χρήστες ή υπολογιστές αφορά.":"What is happening, since when, which users or computers it affects.",
   "Τηλέφωνο επικοινωνίας (προαιρετικό)":"Contact phone (optional)","Αποστολή αιτήματος":"Send request","Συμπληρώστε θέμα και περιγραφή.":"Fill in subject and description.",
   "Το αίτημα στάλθηκε. Θα εμφανιστεί εδώ με αριθμό σε 1–2 λεπτά και θα λάβετε επιβεβαίωση με email.":"Request sent. It will appear here with a number within 1–2 minutes, and you'll get a confirmation email.",
-  "ή στείλτε email":"or send an email","Δημιουργήθηκε από την πύλη":"Created from the portal",
+  "ή στείλτε email":"or send an email","Συνημμένα":"Attachments","Επισύναψη":"Attach","Επισύναψη αρχείων":"Attach files","Αφαίρεση":"Remove",
+  "Δεν υπάρχουν συνημμένα.":"No attachments.","Τα βλέπει και ο πελάτης στην πύλη.":"The customer can see these in the portal.","Ανέβασμα…":"Uploading…",
+  "Δεν φορτώθηκαν τα συνημμένα. Δοκίμασε ανανέωση.":"Attachments didn't load. Try refreshing.","Παλαιότερα συνημμένα στο SharePoint":"Older attachments in SharePoint","Δημιουργήθηκε από την πύλη":"Created from the portal",
   "Το αίτημα έχει ολοκληρωθεί. Αν το θέμα εμφανίστηκε ξανά, γράψτε εδώ και θα ανοίξει ξανά.":"This request is complete. If the issue came back, write here and it will reopen.",
   "Η απάντησή σας πηγαίνει στον τεχνικό και εμφανίζεται εδώ σε 1–2 λεπτά.":"Your reply goes to the technician and appears here within 1–2 minutes.","Θα ανατεθεί σύντομα":"Will be assigned soon","Άνοιξε από":"Opened by",
   /* new ticket */
@@ -691,8 +713,43 @@ const Graph = {
     return fromClient(await g(`/sites/${siteId}/lists/TicketClients/items`, { method:"POST", body:JSON.stringify({ fields:f }) }));
   },
   async deleteClient(id){ await g(`/sites/${siteId}/lists/TicketClients/items/${id}`, { method:"DELETE" }); },
-  async portalSend(o){ await g(`/sites/${siteId}/lists/PortalInbox/items`, { method:"POST", body:JSON.stringify({ fields:{ Title:(o.title || "").slice(0,250), Kind:o.kind, TicketRef:o.ref || 0, Body:o.body } }) }); }
+  async portalSend(o){ await g(`/sites/${siteId}/lists/PortalInbox/items`, { method:"POST", body:JSON.stringify({ fields:{ Title:(o.title || "").slice(0,250), Kind:o.kind, TicketRef:o.ref || 0, Body:o.body, UploadFolder:o.folder || "" } }) }); },
+  async files(id){
+    try { const d = await g(`/drives/${DRIVE_FILES}/root:/${id}:/children?$top=200`); return (d.value || []).filter(x => x.file).map(fromFile); }
+    catch(e){ if(e.status === 404) return []; throw e; }
+  },
+  async addFile(id, file){ return fromFile(await uploadTo(DRIVE_FILES, `${id}/${stampName(file.name)}`, file)); },
+  async portalUpload(folder, file){ await uploadTo(DRIVE_UPLOADS, `${S.me.email}/${folder}/${safeName(file.name)}`, file); }
 };
+
+/* files: Graph drive items */
+const safeName = n => { n = String(n || "file").normalize("NFC").replace(/[#%'"*:<>?\/\\|~&{}]/g, "_").replace(/\s+/g, " ").trim(); if(n.length > 120){ const i = n.lastIndexOf("."); const ext = i > 0 ? n.slice(i, i + 12) : ""; n = n.slice(0, 120 - ext.length) + ext; } return n || "file"; };
+const stampName = n => { const d = wall(new Date()).toISOString(); return `${d.slice(0,10).replace(/-/g,"")}-${d.slice(11,19).replace(/:/g,"")}_${safeName(n)}`; };
+const shownName = n => String(n || "").replace(/^\d{8}-?\d{6}_/, "");
+const fromFile = x => ({ id:x.id, name:shownName(x.name), size:x.size || 0, url:x["@microsoft.graph.downloadUrl"] || x.webUrl || "", web:x.webUrl || "", created:x.createdDateTime, by:x.createdBy?.user?.displayName || "" });
+async function uploadTo(drive, path, file){
+  const enc = path.split("/").map(encodeURIComponent).join("/");
+  const s = await g(`/drives/${drive}/root:/${enc}:/createUploadSession`, { method:"POST", body:JSON.stringify({ item:{ "@microsoft.graph.conflictBehavior":"rename" } }) });
+  const CH = 327680 * 10; let pos = 0, last = null;
+  while(pos < file.size){
+    const end = Math.min(pos + CH, file.size);
+    const r = await fetch(s.uploadUrl, { method:"PUT", headers:{ "Content-Range":`bytes ${pos}-${end - 1}/${file.size}` }, body:file.slice(pos, end) });
+    if(!r.ok && r.status !== 202){ const e = new Error(T("Το αρχείο δεν ανέβηκε", "The file did not upload") + ` (${r.status})`); e.status = r.status; throw e; }
+    last = r; pos = end;
+  }
+  if(!file.size) throw new Error(T("Το αρχείο είναι κενό", "The file is empty"));
+  return last.json();
+}
+const fmtSize = b => b >= 1048576 ? (b / 1048576).toLocaleString(LOC, { maximumFractionDigits:1 }) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+function checkFiles(list){
+  const files = [...(list || [])];
+  if(files.length > MAX_FILES){ toast(T(`Έως ${MAX_FILES} αρχεία κάθε φορά.`, `Up to ${MAX_FILES} files at a time.`), true); return null; }
+  const big = files.find(f => f.size > MAX_FILE_MB * 1048576);
+  if(big){ toast(T(`Το ${big.name} είναι πάνω από ${MAX_FILE_MB} MB.`, `${big.name} is over ${MAX_FILE_MB} MB.`), true); return null; }
+  const empty = files.find(f => !f.size);
+  if(empty){ toast(T(`Το ${empty.name} είναι κενό.`, `${empty.name} is empty.`), true); return null; }
+  return files;
+}
 
 /* ================= backend: demo ================= */
 const Demo = (() => {
@@ -741,6 +798,8 @@ const Demo = (() => {
     te(8, 10, at(2, "16","00", 50), "Επικοινωνία με Dell για αντικατάσταση δίσκου", "Τηλεφωνικά", false)
   ];
   let nT = 15, nC = 6, nCl = 5, nTe = 9;
+  const demoUploads = {};
+  const demoFiles = { 11:[{ id:"f1", name:"phone-settings.png", size:184320, url:"#", created:h(29.5), by:"Ελένη Δημητρίου" }] };
   return {
     async start(){ const portal = /[?&]portal\b/.test(location.search); S.me = portal ? { name:"Μαρία Κωνσταντίνου", email:"maria@alfalogistics.gr" } : { name:"Reinaldo Dhami", email:"adamis@praxisit.gr" }; S.customer = portal; return "ok"; },
     async load(){ if(S.customer){ S.tickets = structuredClone(tickets.filter(t => t.client === "Alfa Logistics ΑΕ")); S.clients = []; S.time = []; return; } S.tickets = structuredClone(tickets); S.clients = structuredClone(clients); S.time = structuredClone(time); },
@@ -754,7 +813,13 @@ const Demo = (() => {
     async addComment(c){ const x = { ...c, id:nC++, created:nowIso(), sent:c.dir === DIR.OUT }; comments.push(x); return {...x}; },
     async saveClient(o){ if(o.id){ Object.assign(clients.find(c => c.id === o.id), o); return o; } const c = { ...o, id:nCl++ }; clients.push(c); return {...c}; },
     async deleteClient(id){ clients.splice(clients.findIndex(c => c.id === id), 1); },
+    async files(id){ return (demoFiles[id] || []).map(x => ({...x})); },
+    async addFile(id, file){ const x = { id:"f" + Math.random().toString(36).slice(2), name:file.name, size:file.size, url:URL.createObjectURL(file), created:nowIso(), by:S.me.name }; (demoFiles[id] ||= []).push(x); return {...x}; },
+    async portalUpload(folder, file){ (demoUploads[folder] ||= []).push(file); },
     async portalSend(o){ setTimeout(() => {
+      const up = demoUploads[o.folder] || []; delete demoUploads[o.folder];
+      const moveTo = id => up.forEach(file => (demoFiles[id] ||= []).push({ id:"f" + Math.random().toString(36).slice(2), name:file.name, size:file.size, url:URL.createObjectURL(file), created:nowIso(), by:S.me.name }));
+      if(o.kind === "reply") moveTo(o.ref); else moveTo(nT);
       if(o.kind === "reply"){ comments.push({ id:nC++, ref:o.ref, dir:DIR.IN, author:S.me.name, body:o.body, created:nowIso() }); const t = tickets.find(x => x.id === o.ref); if(t){ t.last = nowIso(); if(["Αναμονή πελάτη","Επιλύθηκε","Κλειστό"].includes(t.status)){ t.status = "Σε εξέλιξη"; t.resolved = null; } } }
       else { const t = { id:nT, no:ticketNo(nT), title:o.title, desc:o.body, status:"Νέο", priority:"P3 Κανονικό", type:"Περιστατικό", impact:"Μεσαία", urgency:"Μεσαία", category:"Άλλο", client:"Alfa Logistics ΑΕ", tier:"Professional", reqName:S.me.name, reqEmail:S.me.email, source:"Web", tech:"adamis@praxisit.gr", created:nowIso(), last:nowIso() }; nT++; tickets.unshift(t); }
     }, 1500); },
@@ -787,6 +852,8 @@ const ICON = {
   report:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   bell:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
   belloff:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0M2 2l20 20"/></svg>',
+  clip:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.1l-9.2 9.2a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5"/></svg>',
+  file:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
   back:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>'
 };
 
@@ -977,6 +1044,38 @@ function bindCommon(m){
 
 /* ================= ticket detail ================= */
 let replyMode = DIR.OUT, pendingResolve = false;
+function filesPanelHtml(t, canAdd){
+  const cl = clientOf(t), shared = !S.customer && cl && cl.portalUsers;
+  return `<section class="panel tpanel files" id="filesBox">
+    <div class="tp-head"><h2>Συνημμένα<small id="filesCount"></small></h2><span class="sp"></span>
+      ${canAdd ? `<label class="btn quiet attach">${ICON.clip}Επισύναψη<input type="file" id="fileIn" multiple hidden></label>` : ""}</div>
+    <div id="filesList"><div class="spin" style="margin:12px auto;width:20px;height:20px"></div></div>
+    ${shared ? `<p class="muted" style="margin-top:8px;font-size:13px">Τα βλέπει και ο πελάτης στην πύλη.</p>` : ""}
+  </section>`;
+}
+async function loadFiles(t){
+  const box = $("#filesList"); if(!box) return;
+  let list = null; try { list = await API.files(t.id); } catch(e){ if(e.message === "redirect") return; }
+  if(!S.open || S.open.id !== t.id || !$("#filesList")) return;
+  S.files = list || [];
+  const el = $("#filesList");
+  if(list === null){ el.innerHTML = `<p class="muted">Δεν φορτώθηκαν τα συνημμένα. Δοκίμασε ανανέωση.</p>`; return; }
+  $("#filesCount").textContent = list.length ? String(list.length) : "";
+  el.innerHTML = list.length ? `<div class="flist">${list.sort((a,b) => new Date(a.created) - new Date(b.created)).map(f => `<a class="fitem" href="${esc(f.url)}" target="_blank" rel="noopener" download="${esc(f.name)}">${ICON.file}<span class="fn">${esc(f.name)}</span><span class="fm">${fmtSize(f.size)}${f.by ? `, ${esc(f.by)}` : ""}, ${fmt(f.created)}</span></a>`).join("")}</div>`
+    : `<p class="muted">Δεν υπάρχουν συνημμένα.</p>`;
+}
+function bindFiles(t){
+  const inp = $("#fileIn"); if(!inp) return;
+  inp.onchange = async () => {
+    const files = checkFiles(inp.files); inp.value = ""; if(!files || !files.length) return;
+    const lab = inp.closest("label"); lab.classList.add("busy");
+    let n = 0;
+    for(const f of files){ const ok = await guard(async () => { await API.addFile(t.id, f); return true; }); if(ok) n++; }
+    lab.classList.remove("busy");
+    if(n){ toast(T(`Ανέβηκαν ${n} αρχεία`, `${n} file(s) uploaded`)); loadFiles(t); }
+  };
+}
+
 async function openTicket(id, push = true){
   S.open = S.tickets.find(t => t.id === id); if(!S.open) return;
   S.comments = null; replyMode = DIR.OUT; pendingResolve = false;
@@ -984,6 +1083,7 @@ async function openTicket(id, push = true){
   render();
   const c = await guard(() => API.comments(id)) || [];
   if(S.open && S.open.id === id){ S.comments = c; renderTimeline(); }
+  if(S.open && S.open.id === id) loadFiles(S.open);
 }
 function renderTicket(m){
   const t = S.open, cl = clientOf(t);
@@ -1011,6 +1111,7 @@ function renderTicket(m){
           <button class="btn" id="sendBtn"></button>
         </div>
       </div>`}
+      ${filesPanelHtml(t, true)}
       <div id="timeBox">${timePanelHtml(t)}</div>
     </div>
     <div class="props">
@@ -1037,13 +1138,13 @@ function renderTicket(m){
         ${T("Απόκριση έως","Response by")} ${fmt(t.due)}${t.firstResp ? `, ${T("απαντήθηκε","answered")} ${fmt(t.firstResp)}` : ""}<br>
         ${T("Επίλυση έως","Resolution by")} ${fmt(t.resolveDue)}${t.resolved ? `, ${T("επιλύθηκε","resolved")} ${fmt(t.resolved)}` : ""}
         ${!t.due && !t.resolveDue ? `<br><span style="color:var(--dim)">Ο πελάτης δεν έχει σύμβαση, άρα δεν υπάρχει δέσμευση χρόνου.</span>` : ""}</div></div>
-      ${spLink ? `<div class="prop"><a href="${spLink}" target="_blank" rel="noopener" style="color:var(--primary);font-size:14px">Συνημμένα στο SharePoint</a></div>` : ""}
+      ${spLink ? `<div class="prop"><a href="${spLink}" target="_blank" rel="noopener" style="color:var(--primary);font-size:14px">Παλαιότερα συνημμένα στο SharePoint</a></div>` : ""}
       <div class="prop"><button class="btn danger" id="delTicket" style="width:100%;justify-content:center">Διαγραφή ticket</button>
         <div class="computed" id="delHint">Διαγράφονται και τα μηνύματα και οι ώρες του. Επαναφέρεται από τον κάδο ανακύκλωσης του SharePoint.</div></div>
     </div>
   </div>`;
   $("#backBtn").onclick = () => { S.open = null; go("tickets"); };
-  bindProps(); bindTimePanel(t);
+  bindProps(); bindTimePanel(t); bindFiles(t);
   $("#delTicket").onclick = () => deleteTicket(t);
   if(closed) $("#reopenBtn").onclick = reopen; else bindComposer();
   if(S.comments) renderTimeline();
@@ -1528,7 +1629,7 @@ S.pending = [];
 const norm = v => (v || "").replace(/\s+/g, " ").trim();
 function pendingFor(ref, comments){
   const fresh = Date.now() - 15*60000;
-  S.pending = S.pending.filter(p => new Date(p.created) > fresh && !(p.kind === "reply" && S.open && S.open.id === p.ref && comments.some(c => c.dir === DIR.IN && norm(c.body) === norm(p.body))));
+  S.pending = S.pending.filter(p => new Date(p.created) > fresh && !(p.kind === "reply" && S.open && S.open.id === p.ref && comments.some(c => c.dir === DIR.IN && norm(c.body) === norm(p.match || p.body))));
   return S.pending.filter(p => p.kind === "reply" && p.ref === ref).map(p => ({ dir:DIR.IN, author:S.me.name, body:p.body, created:p.created, pending:true }));
 }
 function pendingNew(){
@@ -1540,12 +1641,15 @@ function portalNew(){
   const close = modal("Νέο αίτημα προς την Praxis IT", `
     <label>Θέμα με λίγα λόγια<input class="field" name="title" required maxlength="200" placeholder="π.χ. Δεν τυπώνει ο εκτυπωτής του λογιστηρίου"></label>
     <label>Περιγράψτε το πρόβλημα ή το αίτημα<textarea class="field" name="body" rows="6" required placeholder="Τι συμβαίνει, από πότε, ποιους χρήστες ή υπολογιστές αφορά."></textarea></label>
-    <label>Τηλέφωνο επικοινωνίας (προαιρετικό)<input class="field" name="phone" type="tel" autocomplete="tel"></label>`,
+    <label>Τηλέφωνο επικοινωνίας (προαιρετικό)<input class="field" name="phone" type="tel" autocomplete="tel"></label>
+    <div><label class="btn quiet attach">${ICON.clip}Επισύναψη αρχείων<input type="file" id="nfiles" multiple hidden></label><div class="chips" id="nchips"></div></div>`,
     async fd => {
       const title = (fd.title || "").trim(), body = (fd.body || "").trim();
       if(!title || !body){ toast(L("Συμπληρώστε θέμα και περιγραφή."), true); return false; }
       const full = body + (fd.phone && fd.phone.trim() ? `\n\n${T("Τηλέφωνο επικοινωνίας", "Contact phone")}: ${fd.phone.trim()}` : "");
-      const ok = await guard(async () => { await API.portalSend({ kind:"new", title, body:full }); return true; });
+      $("#msave").textContent = (chosen.nfiles || []).length ? L("Ανέβασμα…") : L("Αποστολή αιτήματος");
+      const ok = await guard(async () => { const folder = await uploadChosen("nfiles"); await API.portalSend({ kind:"new", title, body:full, folder }); return true; });
+      $("#msave") && ($("#msave").textContent = L("Αποστολή αιτήματος"));
       if(!ok) return false;
       S.pending.push({ kind:"new", title, body:full, created:nowIso() });
       pFilter = "open"; render(); toast(L("Το αίτημα στάλθηκε. Θα εμφανιστεί εδώ με αριθμό σε 1–2 λεπτά και θα λάβετε επιβεβαίωση με email."));
@@ -1553,18 +1657,38 @@ function portalNew(){
     },
     `<a class="mlink" href="${mailto(T("Νέο αίτημα: ","New request: "), T("Περιγράψτε το πρόβλημα ή το αίτημα:\n\n\nΤηλέφωνο επικοινωνίας:\n", "Describe the problem or request:\n\n\nContact phone:\n"))}">ή στείλτε email</a>`);
   $("#msave").textContent = L("Αποστολή αιτήματος");
+  bindChips("nfiles", "nchips");
   return close;
 }
+/* chosen files waiting to be sent, per file input */
+const chosen = {};
+function bindChips(inputId, chipsId){
+  chosen[inputId] = [];
+  const inp = $("#" + inputId), box = $("#" + chipsId);
+  const paint = () => { box.innerHTML = chosen[inputId].map((f, i) => `<span class="chip">${ICON.file}${esc(f.name)} <small>${fmtSize(f.size)}</small><button type="button" data-rm="${i}" aria-label="Αφαίρεση">×</button></span>`).join("");
+    box.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { chosen[inputId].splice(+b.dataset.rm, 1); paint(); }); };
+  inp.onchange = () => { const all = checkFiles([...chosen[inputId], ...inp.files]); inp.value = ""; if(all){ chosen[inputId] = all; paint(); } };
+  paint();
+}
+async function uploadChosen(inputId){
+  const files = chosen[inputId] || []; if(!files.length) return "";
+  const folder = Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+  for(const f of files) await API.portalUpload(folder, f);
+  return folder;
+}
 async function portalReply(t){
-  const ta = $("#pbody"), body = (ta.value || "").trim();
-  if(!body){ toast(L("Γράψτε πρώτα την απάντησή σας."), true); ta.focus(); return; }
-  const b = $("#psend"); b.disabled = true;
-  const ok = await guard(async () => { await API.portalSend({ kind:"reply", ref:t.id, title:t.no, body }); return true; });
-  b.disabled = false;
+  const ta = $("#pbody"), files = chosen.pfiles || [];
+  let body = (ta.value || "").trim();
+  if(!body && !files.length){ toast(L("Γράψτε πρώτα την απάντησή σας."), true); ta.focus(); return; }
+  if(!body) body = T("Σας στέλνω συνημμένα.", "Sending attachments.");
+  const b = $("#psend"); b.disabled = true; b.textContent = files.length ? L("Ανέβασμα…") : L("Αποστολή");
+  const ok = await guard(async () => { const folder = await uploadChosen("pfiles"); await API.portalSend({ kind:"reply", ref:t.id, title:t.no, body, folder }); return true; });
+  b.disabled = false; b.textContent = L("Αποστολή");
   if(!ok) return;
-  S.pending.push({ kind:"reply", ref:t.id, body, created:nowIso() });
+  S.pending.push({ kind:"reply", ref:t.id, body:body + (files.length ? `\n(${files.length} ${T("συνημμένα", "attachments")})` : ""), match:body, created:nowIso() });
+  chosen.pfiles = []; $("#pchips").innerHTML = "";
   ta.value = ""; renderTimeline(); toast(L("Στάλθηκε. Ο τεχνικός θα το δει σε 1–2 λεπτά."));
-  const reload = async () => { if(S.open && S.open.id === t.id){ const cs = await API.comments(t.id).catch(() => null); if(cs && S.open && S.open.id === t.id){ S.comments = cs; renderTimeline(); } } };
+  const reload = async () => { if(S.open && S.open.id === t.id){ const cs = await API.comments(t.id).catch(() => null); if(cs && S.open && S.open.id === t.id){ S.comments = cs; renderTimeline(); loadFiles(t); } } };
   setTimeout(reload, 70000); setTimeout(reload, 130000);
 }
 function renderPortal(m){
@@ -1610,11 +1734,15 @@ function renderPortalTicket(m){
       <div class="composer portal-reply">
         ${t.status === "Κλειστό" || t.status === "Επιλύθηκε" ? `<p class="portal-hint">${L(t.status === "Κλειστό" ? "Το αίτημα έχει ολοκληρωθεί. Αν το θέμα εμφανίστηκε ξανά, γράψτε εδώ και θα ανοίξει ξανά." : "Η απάντησή σας πηγαίνει στον τεχνικό και εμφανίζεται εδώ σε 1–2 λεπτά.")}</p>` : ""}
         <textarea id="pbody" aria-label="Η απάντησή σας" placeholder="Γράψτε την απάντησή σας ή στοιχεία που ζητήσαμε"></textarea>
+        <div class="chips" id="pchips"></div>
         <div class="crow">
-          <a class="btn quiet" href="${mailto(`[${t.no}] ${t.title}`)}">Με email</a>
+          <label class="btn quiet attach">${ICON.clip}Επισύναψη<input type="file" id="pfiles" multiple hidden></label>
+          <span class="sp" style="flex:1"></span>
+          <a class="mlink" href="${mailto(`[${t.no}] ${t.title}`)}">Με email</a>
           <button class="btn" id="psend">Αποστολή</button>
         </div>
       </div>
+      ${filesPanelHtml(t, false)}
     </div>
     <div class="props">
       <div class="prop"><span class="k">Κατάσταση</span><div class="v">${pStatus(t.status)}</div></div>
@@ -1626,7 +1754,9 @@ function renderPortalTicket(m){
   </div>`;
   $("#backBtn").onclick = () => { S.open = null; go("tickets"); };
   $("#psend").onclick = () => portalReply(t);
+  bindChips("pfiles", "pchips");
   if(S.comments) renderTimeline();
+  if(S.comments) loadFiles(t);
 }
 
 /* ================= modal ================= */
