@@ -595,6 +595,8 @@ const ICON = {
   moon:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
   play:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>',
   report:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  bell:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+  belloff:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5M17 17H3s3-2 3-9a4.67 4.67 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0M2 2l20 20"/></svg>',
   back:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>'
 };
 
@@ -628,6 +630,7 @@ function renderShell(){
       </nav>
       <div id="sideTimer" style="margin-top:14px"></div>
       <div class="side-foot">
+        <button data-act="bell" data-label="1"></button>
         <button id="themeBtn">${ICON.moon}Σκούρο / φωτεινό θέμα</button>
         <div class="who"><b>${esc(S.me.name)}</b>${esc(S.me.email)}</div>
         <button id="logoutBtn">Αποσύνδεση</button>
@@ -644,11 +647,12 @@ function renderShell(){
   </nav>`;
   document.querySelectorAll("[data-v]").forEach(b => b.onclick = () => go(b.dataset.v));
   $("#themeBtn").onclick = toggleTheme;
+  document.querySelectorAll(".side-foot [data-act='bell']").forEach(b => b.onclick = toggleNotify);
   $("#tabNew").onclick = newTicket;
   $("#logoutBtn").onclick = () => API.logout();
 }
 function go(view, push = true){ S.view = view; S.q = ""; if(push) history.pushState(null, "", "#" + view); render(); }
-function mtop(){ return `<div class="mtop"><div class="logo">Praxis<b>IT</b></div><div class="sp"></div>${timerChip()}<button class="icon-btn" data-act="theme" aria-label="Σκούρο ή φωτεινό θέμα">${ICON.moon}</button><button class="icon-btn" data-act="refresh" aria-label="Ανανέωση">${ICON.refresh}</button></div>`; }
+function mtop(){ return `<div class="mtop"><div class="logo">Praxis<b>IT</b></div><div class="sp"></div>${timerChip()}<button class="icon-btn" data-act="bell" aria-label="Ειδοποιήσεις"></button><button class="icon-btn" data-act="theme" aria-label="Σκούρο ή φωτεινό θέμα">${ICON.moon}</button><button class="icon-btn" data-act="refresh" aria-label="Ανανέωση">${ICON.refresh}</button></div>`; }
 function render(){
   document.querySelectorAll("[data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === S.view));
   $("#navCount").textContent = fcount("open") || "";
@@ -661,6 +665,8 @@ function render(){
   m.querySelectorAll('[data-act="refresh"]').forEach(b => b.onclick = refresh);
   m.querySelectorAll('[data-act="new"]').forEach(b => b.onclick = newTicket);
   m.querySelectorAll('[data-act="theme"]').forEach(b => b.onclick = toggleTheme);
+  m.querySelectorAll('[data-act="bell"]').forEach(b => b.onclick = toggleNotify);
+  paintBell();
   const st = $("#sideTimer"); if(st) st.innerHTML = timerChip();
   document.querySelectorAll("[data-timer-open]").forEach(b => b.onclick = () => openTicket(+b.dataset.timerOpen));
   window.scrollTo(0, 0);
@@ -1162,6 +1168,101 @@ function exportCsv(d){
 }
 
 
+/* ================= notifications (sound + system bar) ================= */
+const NOTIFY_KEY = "praxis-notify", SEEN_KEY = "praxis-notified";
+const notifyOn = () => { try { return localStorage.getItem(NOTIFY_KEY) === "on"; } catch(_){ return false; } };
+let audioCtx = null, swReg = null;
+function unlockAudio(){ try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); if(audioCtx.state === "suspended") audioCtx.resume(); } catch(_){} }
+document.addEventListener("pointerdown", unlockAudio, { once:true });
+function chime(urgent){
+  if(!audioCtx) return;
+  const notes = urgent ? [880, 660, 880, 660] : [660, 880];
+  notes.forEach((f, i) => {
+    const o = audioCtx.createOscillator(), gn = audioCtx.createGain(), t0 = audioCtx.currentTime + i * 0.18;
+    o.type = "sine"; o.frequency.value = f;
+    gn.gain.setValueAtTime(0.0001, t0); gn.gain.exponentialRampToValueAtTime(0.35, t0 + 0.02); gn.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.17);
+    o.connect(gn).connect(audioCtx.destination); o.start(t0); o.stop(t0 + 0.18);
+  });
+}
+function seenSet(){ try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || "[]")); } catch(_){ return new Set(); } }
+function markSeen(key){ try { const s = [...seenSet(), key].slice(-300); localStorage.setItem(SEEN_KEY, JSON.stringify(s)); } catch(_){} }
+async function notify(title, body, hash, opts = {}){
+  if(opts.once){ if(seenSet().has(opts.once)) return; markSeen(opts.once); }
+  if(!notifyOn()) return;
+  chime(opts.urgent);
+  toast(`${title}: ${body}`);
+  if(!("Notification" in window) || Notification.permission !== "granted") return;
+  const url = "./" + (hash || "");
+  const o = { body, tag:opts.tag || hash || title, renotify:true, icon:"icon-192.png", badge:"icon-192.png", data:{ url }, requireInteraction:!!opts.urgent };
+  try { if(swReg) { await swReg.showNotification(title, o); return; } } catch(_){}
+  try { const n = new Notification(title, o); n.onclick = () => { window.focus(); location.hash = hash || ""; n.close(); }; } catch(_){}
+}
+async function setupSW(){
+  if(!("serviceWorker" in navigator)) return;
+  try { swReg = await navigator.serviceWorker.register("sw.js"); } catch(_){}
+  navigator.serviceWorker.addEventListener("message", e => { if(e.data?.type === "open"){ const h = new URL(e.data.url).hash; if(h) location.hash = h; } });
+}
+async function toggleNotify(){
+  unlockAudio();
+  if(notifyOn()){ try { localStorage.setItem(NOTIFY_KEY, "off"); } catch(_){} paintBell(); toast("Οι ειδοποιήσεις απενεργοποιήθηκαν"); return; }
+  if("Notification" in window && Notification.permission === "default"){ try { await Notification.requestPermission(); } catch(_){} }
+  try { localStorage.setItem(NOTIFY_KEY, "on"); } catch(_){}
+  paintBell();
+  const denied = "Notification" in window && Notification.permission === "denied";
+  await notify("Ειδοποιήσεις ενεργές", denied ? "Μόνο ήχος: ο browser έχει μπλοκάρει τις ειδοποιήσεις στη μπάρα." : "Θα ακούς ήχο και θα βλέπεις μήνυμα στη μπάρα.", "", { tag:"test" });
+}
+function paintBell(){
+  const on = notifyOn();
+  document.querySelectorAll("[data-act='bell']").forEach(b => { b.innerHTML = (on ? ICON.bell : ICON.belloff) + (b.dataset.label ? `<span>${on ? "Ειδοποιήσεις ενεργές" : "Ενεργοποίηση ειδοποιήσεων"}</span>` : ""); b.setAttribute("aria-pressed", on); b.title = on ? "Απενεργοποίηση ειδοποιήσεων" : "Ενεργοποίηση ειδοποιήσεων"; });
+}
+
+/* what changed since the last check */
+let snap = null;
+function takeSnap(){ snap = new Map(S.tickets.map(t => [t.id, t.last || t.created])); }
+async function checkChanges(){
+  if(!snap){ takeSnap(); return; }
+  for(const t of S.tickets){
+    const before = snap.get(t.id);
+    if(before === undefined){
+      notify(`Νέο ticket ${t.no}`, `${t.title}${t.client ? `, ${t.client}` : ""}`, "#t" + t.id, { once:`new:${t.id}` });
+      continue;
+    }
+    const now = t.last || t.created;
+    if(now && before && new Date(now) - new Date(before) > 5000){
+      const cs = await API.comments(t.id).catch(() => []);
+      const r = cs.filter(c => c.dir === DIR.IN && new Date(c.created) > new Date(before)).sort((a,b) => new Date(b.created) - new Date(a.created))[0];
+      if(r){
+        notify(`Απάντηση πελάτη στο ${t.no}`, (r.body || "").replace(/\s+/g," ").slice(0,140) || t.title, "#t" + t.id, { once:`reply:${r.id}` });
+        if(S.open && S.open.id === t.id && S.view === "ticket"){ S.comments = cs; renderTimeline(); }
+      }
+    }
+  }
+  takeSnap();
+}
+function checkSla(){
+  S.tickets.filter(t => OPEN.includes(t.status)).forEach(t => {
+    const s = slaState(t); if(!s || !(s.risk || s.breach)) return;
+    const phase = t.firstResp ? "resolve" : "response";
+    if(s.breach) notify(`Έληξε το SLA στο ${t.no}`, `${phase === "response" ? "Απόκριση" : "Επίλυση"}: ${t.title}, ${t.client || ""}`, "#t" + t.id, { once:`breach:${t.id}:${phase}:${t.due}:${t.resolveDue}`, urgent:true });
+    else notify(`SLA σε κίνδυνο στο ${t.no}`, `${s.label}. ${t.title}`, "#t" + t.id, { once:`risk:${t.id}:${phase}:${t.due}:${t.resolveDue}`, urgent:true });
+  });
+}
+function checkTimer(){
+  const tm = getTimer(); if(!tm) return;
+  const h = (Date.now() - new Date(tm.start)) / 3600000; if(h < 2) return;
+  const t = S.tickets.find(x => x.id === tm.ref);
+  notify("Το χρονόμετρο τρέχει ακόμα", `${t ? t.no + ", " : ""}${Math.floor(h)} ώρες. Μήπως ξέχασες να το σταματήσεις;`, "#t" + tm.ref, { once:`timer:${tm.start}:${Math.floor(h/2)}` });
+}
+async function poll(){
+  if(!S.me.name || DEMO) return;
+  const editing = !!$("#mov") || S.view === "ticket";
+  try { await API.load(); } catch(_){ return; }
+  if(S.open){ const fresh = S.tickets.find(t => t.id === S.open.id); if(fresh){ const i = S.tickets.indexOf(fresh); S.tickets[i] = Object.assign(S.open, fresh); } }
+  await checkChanges(); checkSla(); checkTimer();
+  if(!editing) render();
+}
+
+
 /* ================= modal ================= */
 function modal(title, html, onSave, extra){
   $("#layer").innerHTML = `<div class="overlay" id="mov"></div><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><header id="mt">${esc(title)}</header>
@@ -1269,11 +1370,12 @@ async function boot(){
   if(st !== "ok"){ gate(`<p>Δεν ήταν δυνατή η σύνδεση με το SharePoint. Έλεγξε τη σύνδεση στο internet και δοκίμασε ξανά.</p><button class="btn" onclick="location.reload()">Δοκιμή ξανά</button>`); return; }
   await guard(() => API.load());
   renderShell(); route();
+  takeSnap(); setupSW(); checkSla(); checkTimer();
 }
 window.addEventListener("popstate", route);
 document.addEventListener("keydown", e => { if(e.key === "Escape" && $("#mov")) $("#mov").click(); });
-document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && S.me.name && !DEMO && S.view !== "ticket" && !$("#mov")) API.load().then(render).catch(() => {}); });
-setInterval(() => { if(document.visibilityState === "visible" && S.me.name && !DEMO && S.view !== "ticket" && !$("#mov")) API.load().then(render).catch(() => {}); }, 120000);
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") poll(); });
+setInterval(poll, 60000);
 boot();
 </script>
 </body>
