@@ -468,7 +468,7 @@ const EN = {
   "Η πρόσβαση είναι ενεργή για αυτούς τους χρήστες.":"Access is active for these users.","Η πρόσβαση ενημερώνεται, σε 1–2 λεπτά.":"Access is being updated, 1–2 minutes.",
   "Στοιχεία πελάτη":"Customer details","Επωνυμία":"Company name","Domain email, πολλά χωρισμένα με ;":"Email domain, separate several with ;",
   "Μέγιστη πρώτη απόκριση, εργάσιμες ώρες":"Maximum first response, business hours","Σημειώσεις":"Notes",
-  "Χρήστες πύλης πελάτη, email χωρισμένα με ;":"Customer portal users, emails separated by ;","Ο πελάτης διαγράφηκε":"Customer deleted"
+  "Χρήστες πύλης πελάτη, email χωρισμένα με ;":"Customer portal users, emails separated by ;","Γλώσσα email πελάτη":"Customer email language","Ο πελάτης διαγράφηκε":"Customer deleted"
 };
 const L = s => LANG === "en" && s != null && EN[s] != null ? EN[s] : s;
 const GR = /[Ͱ-Ͽἀ-῿]/;
@@ -597,8 +597,8 @@ const T_MAP = {title:"Title",no:"TicketNo",status:"Status",priority:"Priority",t
   desc:"Description",tech:"Technician",source:"Source",due:"DueDate",resolveDue:"ResolveDue",resolved:"ResolvedDate",
   firstResp:"FirstResponse",last:"LastActivity",slaAlerted:"SLAAlerted",resolveAlerted:"ResolveAlerted"};
 function toFields(obj, map){ const o = {}; for(const k in obj) if(map[k]) o[map[k]] = obj[k] === "" ? null : obj[k]; return o; }
-function fromClient(it){ const f = it.fields || {}; return { id:+it.id, name:f.Title || "", domain:f.Domain || "", tier:f.Tier || "Χωρίς σύμβαση", sla:f.SLAHours ?? "", tech:f.DefaultTechnician || "", phone:f.Phone || "", notes:f.Notes || "", portalUsers:f.PortalUsers || "", portalSynced:f.PortalSynced || "", portalGroup:+f.PortalGroupId || 0 }; }
-const C_MAP = {name:"Title",domain:"Domain",tier:"Tier",sla:"SLAHours",tech:"DefaultTechnician",phone:"Phone",notes:"Notes",portalUsers:"PortalUsers"};
+function fromClient(it){ const f = it.fields || {}; return { id:+it.id, name:f.Title || "", domain:f.Domain || "", tier:f.Tier || "Χωρίς σύμβαση", sla:f.SLAHours ?? "", tech:f.DefaultTechnician || "", phone:f.Phone || "", notes:f.Notes || "", portalUsers:f.PortalUsers || "", portalSynced:f.PortalSynced || "", portalGroup:+f.PortalGroupId || 0, lang:(f.ClientLang || "EL").toUpperCase() }; }
+const C_MAP = {name:"Title",domain:"Domain",tier:"Tier",sla:"SLAHours",tech:"DefaultTechnician",phone:"Phone",notes:"Notes",portalUsers:"PortalUsers",lang:"ClientLang"};
 function fromComment(it){ const f = it.fields || {}; return { id:+it.id, ref:+f.TicketRef, body:f.Body || "", dir:f.Direction || DIR.NOTE, author:f.AuthorName || "", sent:!!f.Sent, created:f.Created }; }
 
 function fromTime(it){ const f = it.fields || {}; return { id:+it.id, ref:+f.TicketRef, no:f.TicketNo || "", client:f.ClientName || "", tech:f.Technician || "", techName:f.TechName || "",
@@ -685,7 +685,7 @@ const Demo = (() => {
   const clients = [
     { id:1, name:"Λογιστικό Γραφείο Παπαδόπουλος", domain:"papadopoulos-logistiki.gr", tier:"Business", sla:4, tech:"adamis@praxisit.gr", phone:"210 000 0001", notes:"" },
     { id:2, name:"Ιατρείο Κ. Νικολάου", domain:"iatreio-nikolaou.gr", tier:"Starter", sla:8, tech:"adamis@praxisit.gr", phone:"210 000 0002", notes:"" },
-    { id:3, name:"Alfa Logistics ΑΕ", domain:"alfalogistics.gr", tier:"Professional", sla:2, tech:"adamis@praxisit.gr", phone:"210 000 0003", notes:"FortiGate 60F, 3CX" },
+    { id:3, name:"Alfa Logistics ΑΕ", domain:"alfalogistics.gr", tier:"Professional", sla:2, tech:"adamis@praxisit.gr", phone:"210 000 0003", notes:"FortiGate 60F, 3CX", lang:"EN" },
     { id:4, name:"Κάβα Μαρίνος", domain:"kavamarinos.gr", tier:"Χωρίς σύμβαση", sla:0, tech:"", phone:"", notes:"" }
   ];
   const mk = (id, title, status, impact, urgency, ci, cat, type, hrs, extra={}) => {
@@ -1012,7 +1012,7 @@ function renderTicket(m){
         <div><label for="p-type">Τύπος</label><select class="field" id="p-type">${opt(TYPES, t.type)}</select></div>
         <div><label for="p-cat">Κατηγορία</label><select class="field" id="p-cat">${opt(["", ...CATEGORIES], t.category)}</select></div>
       </div></div>
-      <div class="prop"><span class="k">Πελάτης</span><div class="v">${esc(t.client || "—")}<br><span style="color:var(--dim);font-size:13px">${esc(L(t.tier || "Χωρίς σύμβαση"))}${cl?.phone ? `, ${esc(cl.phone)}` : ""}</span></div></div>
+      <div class="prop"><span class="k">Πελάτης</span><div class="v">${esc(t.client || "—")}<br><span style="color:var(--dim);font-size:13px">${esc(L(t.tier || "Χωρίς σύμβαση"))}${cl?.phone ? `, ${esc(cl.phone)}` : ""}${cl?.lang === "EN" ? `<br>${T("Τα email του πηγαίνουν στα αγγλικά","Emails to this customer go out in English")}` : ""}</span></div></div>
       <div class="prop"><span class="k">Αιτών</span><div class="v">${esc(t.reqName || "—")}${t.reqEmail ? `<br><a href="mailto:${esc(t.reqEmail)}">${esc(t.reqEmail)}</a>` : ""}</div></div>
       <div class="prop"><span class="k">SLA</span><div class="v" style="font-size:13px">
         ${T("Απόκριση έως","Response by")} ${fmt(t.due)}${t.firstResp ? `, ${T("απαντήθηκε","answered")} ${fmt(t.firstResp)}` : ""}<br>
@@ -1612,7 +1612,7 @@ function renderClients(m){
     <div class="trow thead" style="grid-template-columns:minmax(0,1fr) 140px 120px 90px"><span>Πελάτης</span><span>Πακέτο</span><span class="c-type">Τηλέφωνο</span><span>Ανοιχτά</span></div>
     ${rows.length ? rows.map(c => `<button class="trow" data-cid="${c.id}" style="grid-template-columns:minmax(0,1fr) 140px 120px 90px">
       <span style="min-width:0"><span class="ttl" style="display:block">${esc(c.name)}</span><span class="tsub">${esc(c.domain || "χωρίς domain")}</span></span>
-      <span class="tsub">${esc(L(c.tier))}${+c.sla ? `, ${esc(c.sla)}${T("ω","h")}` : ""}</span><span class="tsub c-type">${esc(c.phone || "—")}</span><span class="tsub">${openCnt(c.name)}</span></button>`).join("")
+      <span class="tsub">${esc(L(c.tier))}${+c.sla ? `, ${esc(c.sla)}${T("ω","h")}` : ""}${c.lang === "EN" ? ", EN" : ""}</span><span class="tsub c-type">${esc(c.phone || "—")}</span><span class="tsub">${openCnt(c.name)}</span></button>`).join("")
       : `<div class="empty">${S.q ? "Κανένας πελάτης δεν ταιριάζει." : "Πρόσθεσε τον πρώτο σου πελάτη για να αντιστοιχίζονται αυτόματα τα email του."}</div>`}
   </div>`;
   const qi = $("#q"); qi.oninput = () => { S.q = qi.value; const p = qi.selectionStart; renderClients(m); const n = $("#q"); n.focus(); n.setSelectionRange(p,p); };
@@ -1626,7 +1626,7 @@ function portalStatus(c){
   return norm(c.portalUsers) === norm(c.portalSynced) ? "Η πρόσβαση είναι ενεργή για αυτούς τους χρήστες." : "Η πρόσβαση ενημερώνεται, σε 1–2 λεπτά.";
 }
 function editClient(c){
-  c = c || { name:"", domain:"", tier:"Business", sla:CFG.tierSla?.Business ?? 4, tech:TECHS[0]?.email || "", phone:"", notes:"" };
+  c = c || { lang:"EL", name:"", domain:"", tier:"Business", sla:CFG.tierSla?.Business ?? 4, tech:TECHS[0]?.email || "", phone:"", notes:"" };
   const close = modal(c.id ? "Στοιχεία πελάτη" : "Νέος πελάτης", `
     <label>Επωνυμία<input class="field" name="name" required value="${esc(c.name)}"></label>
     <label>Domain email, πολλά χωρισμένα με ;<input class="field" name="domain" placeholder="example.gr; example.com" value="${esc(c.domain)}"></label>
@@ -1634,6 +1634,7 @@ function editClient(c){
     <label>Μέγιστη πρώτη απόκριση, εργάσιμες ώρες<input class="field" name="sla" id="slaIn" type="number" min="0" step="0.5" value="${esc(c.sla)}"></label>
     <label>Τεχνικός<select class="field" name="tech">${opt([["","Χωρίς"], ...TECHS.map(x => [x.email, x.name])], c.tech)}</select></label>
     <label>Τηλέφωνο<input class="field" name="phone" value="${esc(c.phone)}"></label></div>
+    <div class="grid2"><label>Γλώσσα email πελάτη<select class="field" name="lang" translate="no">${opt([["EL","Ελληνικά"],["EN","English"]], c.lang || "EL")}</select></label><span></span></div>
     <label>Σημειώσεις<textarea class="field" name="notes" rows="3">${esc(c.notes)}</textarea></label>
     <label>Χρήστες πύλης πελάτη, email χωρισμένα με ;<textarea class="field" name="portalUsers" rows="2" placeholder="maria@example.gr; giorgos@example.gr">${esc(c.portalUsers || "")}</textarea>
       <span class="pf-users">${portalStatus(c)}</span></label>`,
