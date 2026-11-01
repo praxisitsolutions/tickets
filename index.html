@@ -281,6 +281,11 @@ button.trow:hover{background:var(--sunken)}
 .portal-note{color:var(--dim);font-size:14px;margin:-10px 0 16px}
 a.btn{text-decoration:none}
 .portal-reply .btn{display:inline-flex}
+.portal-hint{margin:2px 2px 8px;color:var(--dim);font-size:14px}
+.pending-row{opacity:.75}
+.modal .acts{flex-wrap:wrap;align-items:center}
+.mlink{color:var(--primary);font-size:14px;text-decoration:underline;text-underline-offset:3px}
+.ev .who2 .pend{color:var(--warn)}
 .pf-users{font-size:12px;color:var(--dim);margin-top:4px}
 .trow.prow{grid-template-columns:96px minmax(0,1fr) 200px 140px}
 @media (max-width:860px){.trow.prow{grid-template-columns:minmax(0,1fr) auto}.trow.prow .c-status{text-align:right;max-width:150px}}
@@ -456,7 +461,16 @@ const EN = {
   "Δεν υπάρχουν αιτήματα σε αυτή την προβολή.":"No requests in this view.","Δεν υπάρχουν ακόμα αιτήματα για την εταιρεία σας.":"Your company has no requests yet.",
   "Το αίτημα έχει ολοκληρωθεί. Αν το θέμα εμφανίστηκε ξανά, απαντήστε με email και θα ανοίξει ξανά.":"This request is complete. If the issue came back, reply by email and it will reopen.",
   "Για να απαντήσετε ή να στείλετε στοιχεία, στείλτε email. Η απάντησή σας θα εμφανιστεί εδώ.":"To reply or send details, send an email. Your reply will appear here.",
-  "Απάντηση με email":"Reply by email","Θα ανατεθεί σύντομα":"Will be assigned soon","Άνοιξε από":"Opened by",
+  "Απάντηση με email":"Reply by email","Με email":"By email","Αποστολή":"Send","Η απάντησή σας":"Your reply","Γράψτε την απάντησή σας ή στοιχεία που ζητήσαμε":"Write your reply or the details we asked for",
+  "Γράψτε πρώτα την απάντησή σας.":"Write your reply first.","Στάλθηκε. Ο τεχνικός θα το δει σε 1–2 λεπτά.":"Sent. The technician will see it within 1–2 minutes.",
+  "στέλνεται…":"sending…","Καταχωρείται…":"Being logged…","Νέο αίτημα προς την Praxis IT":"New request to Praxis IT","Θέμα με λίγα λόγια":"Subject in a few words",
+  "π.χ. Δεν τυπώνει ο εκτυπωτής του λογιστηρίου":"e.g. The accounts office printer won't print","Περιγράψτε το πρόβλημα ή το αίτημα":"Describe the problem or request",
+  "Τι συμβαίνει, από πότε, ποιους χρήστες ή υπολογιστές αφορά.":"What is happening, since when, which users or computers it affects.",
+  "Τηλέφωνο επικοινωνίας (προαιρετικό)":"Contact phone (optional)","Αποστολή αιτήματος":"Send request","Συμπληρώστε θέμα και περιγραφή.":"Fill in subject and description.",
+  "Το αίτημα στάλθηκε. Θα εμφανιστεί εδώ με αριθμό σε 1–2 λεπτά και θα λάβετε επιβεβαίωση με email.":"Request sent. It will appear here with a number within 1–2 minutes, and you'll get a confirmation email.",
+  "ή στείλτε email":"or send an email","Δημιουργήθηκε από την πύλη":"Created from the portal",
+  "Το αίτημα έχει ολοκληρωθεί. Αν το θέμα εμφανίστηκε ξανά, γράψτε εδώ και θα ανοίξει ξανά.":"This request is complete. If the issue came back, write here and it will reopen.",
+  "Η απάντησή σας πηγαίνει στον τεχνικό και εμφανίζεται εδώ σε 1–2 λεπτά.":"Your reply goes to the technician and appears here within 1–2 minutes.","Θα ανατεθεί σύντομα":"Will be assigned soon","Άνοιξε από":"Opened by",
   /* new ticket */
   "Επίλεξε πελάτη":"Choose customer","Όνομα αιτούντος":"Requester name","Email αιτούντος":"Requester email","Περιγραφή":"Description","Πηγή":"Source",
   /* clients */
@@ -676,7 +690,8 @@ const Graph = {
     if(obj.id){ await g(`/sites/${siteId}/lists/TicketClients/items/${obj.id}/fields`, { method:"PATCH", body:JSON.stringify(f) }); return obj; }
     return fromClient(await g(`/sites/${siteId}/lists/TicketClients/items`, { method:"POST", body:JSON.stringify({ fields:f }) }));
   },
-  async deleteClient(id){ await g(`/sites/${siteId}/lists/TicketClients/items/${id}`, { method:"DELETE" }); }
+  async deleteClient(id){ await g(`/sites/${siteId}/lists/TicketClients/items/${id}`, { method:"DELETE" }); },
+  async portalSend(o){ await g(`/sites/${siteId}/lists/PortalInbox/items`, { method:"POST", body:JSON.stringify({ fields:{ Title:(o.title || "").slice(0,250), Kind:o.kind, TicketRef:o.ref || 0, Body:o.body } }) }); }
 };
 
 /* ================= backend: demo ================= */
@@ -739,6 +754,10 @@ const Demo = (() => {
     async addComment(c){ const x = { ...c, id:nC++, created:nowIso(), sent:c.dir === DIR.OUT }; comments.push(x); return {...x}; },
     async saveClient(o){ if(o.id){ Object.assign(clients.find(c => c.id === o.id), o); return o; } const c = { ...o, id:nCl++ }; clients.push(c); return {...c}; },
     async deleteClient(id){ clients.splice(clients.findIndex(c => c.id === id), 1); },
+    async portalSend(o){ setTimeout(() => {
+      if(o.kind === "reply"){ comments.push({ id:nC++, ref:o.ref, dir:DIR.IN, author:S.me.name, body:o.body, created:nowIso() }); const t = tickets.find(x => x.id === o.ref); if(t){ t.last = nowIso(); if(["Αναμονή πελάτη","Επιλύθηκε","Κλειστό"].includes(t.status)){ t.status = "Σε εξέλιξη"; t.resolved = null; } } }
+      else { const t = { id:nT, no:ticketNo(nT), title:o.title, desc:o.body, status:"Νέο", priority:"P3 Κανονικό", type:"Περιστατικό", impact:"Μεσαία", urgency:"Μεσαία", category:"Άλλο", client:"Alfa Logistics ΑΕ", tier:"Professional", reqName:S.me.name, reqEmail:S.me.email, source:"Web", tech:"adamis@praxisit.gr", created:nowIso(), last:nowIso() }; nT++; tickets.unshift(t); }
+    }, 1500); },
     login(){}, logout(){ location.reload(); }
   };
 })();
@@ -1032,11 +1051,12 @@ function renderTicket(m){
 function renderTimeline(){
   const t = S.open, el = $("#tl"); if(!el || !t) return;
   const items = [{ dir:DIR.IN, author:t.reqName || t.reqEmail || L("Πελάτης"), body:t.desc, created:t.created, first:true },
-    ...(S.comments || []).filter(c => !S.customer || c.dir === DIR.IN || c.dir === DIR.OUT).slice().sort((a,b) => new Date(a.created) - new Date(b.created))];
+    ...(S.comments || []).filter(c => !S.customer || c.dir === DIR.IN || c.dir === DIR.OUT).slice().sort((a,b) => new Date(a.created) - new Date(b.created)),
+    ...pendingFor(t.id, S.comments || [])];
   el.innerHTML = items.map(c => {
     if(c.dir === DIR.SYS) return `<div class="ev sys"><span class="dot"></span><div class="who2">${esc(sysText(c.body))}, ${esc(L(c.author))}, ${fmt(c.created)}</div></div>`;
     const cls = c.dir === DIR.IN ? "in" : c.dir === DIR.OUT ? "out" : "note";
-    const lab = c.first ? "άνοιξε το αίτημα" : c.dir === DIR.IN ? "απάντησε" : c.dir === DIR.OUT ? (S.customer ? "απάντησε, Praxis IT" : c.sent ? "απάντησε στον πελάτη, εστάλη" : "απάντησε στον πελάτη, σε αναμονή αποστολής") : "εσωτερική σημείωση";
+    const lab = c.pending ? "στέλνεται…" : c.first ? "άνοιξε το αίτημα" : c.dir === DIR.IN ? "απάντησε" : c.dir === DIR.OUT ? (S.customer ? "απάντησε, Praxis IT" : c.sent ? "απάντησε στον πελάτη, εστάλη" : "απάντησε στον πελάτη, σε αναμονή αποστολής") : "εσωτερική σημείωση";
     return `<div class="ev ${cls}"><span class="dot"></span><div class="who2"><b>${esc(c.author || "—")}</b> ${L(lab)}, ${fmt(c.created)}</div><div class="msg">${esc(c.body || L("(χωρίς κείμενο)"))}</div></div>`;
   }).join("");
 }
@@ -1503,28 +1523,79 @@ function renderPortalShell(){
   $("#logoutBtn").onclick = () => API.logout();
 }
 function portalTop(){ return `<div class="mtop"><div class="logo">Praxis<b>IT</b></div><div class="sp"></div>${langBtn("icon-btn")}<button class="icon-btn" data-act="theme" aria-label="Σκούρο ή φωτεινό θέμα">${ICON.moon}</button><button class="icon-btn" data-act="refresh" aria-label="Ανανέωση">${ICON.refresh}</button></div>`; }
+/* messages the customer sent from the portal, shown until the flow has added them (1-2 minutes) */
+S.pending = [];
+const norm = v => (v || "").replace(/\s+/g, " ").trim();
+function pendingFor(ref, comments){
+  const fresh = Date.now() - 15*60000;
+  S.pending = S.pending.filter(p => new Date(p.created) > fresh && !(p.kind === "reply" && S.open && S.open.id === p.ref && comments.some(c => c.dir === DIR.IN && norm(c.body) === norm(p.body))));
+  return S.pending.filter(p => p.kind === "reply" && p.ref === ref).map(p => ({ dir:DIR.IN, author:S.me.name, body:p.body, created:p.created, pending:true }));
+}
+function pendingNew(){
+  const fresh = Date.now() - 15*60000;
+  S.pending = S.pending.filter(p => new Date(p.created) > fresh && !(p.kind === "new" && S.tickets.some(t => norm(t.title) === norm(p.title) && new Date(t.created) > new Date(p.created) - 60000)));
+  return S.pending.filter(p => p.kind === "new");
+}
+function portalNew(){
+  const close = modal("Νέο αίτημα προς την Praxis IT", `
+    <label>Θέμα με λίγα λόγια<input class="field" name="title" required maxlength="200" placeholder="π.χ. Δεν τυπώνει ο εκτυπωτής του λογιστηρίου"></label>
+    <label>Περιγράψτε το πρόβλημα ή το αίτημα<textarea class="field" name="body" rows="6" required placeholder="Τι συμβαίνει, από πότε, ποιους χρήστες ή υπολογιστές αφορά."></textarea></label>
+    <label>Τηλέφωνο επικοινωνίας (προαιρετικό)<input class="field" name="phone" type="tel" autocomplete="tel"></label>`,
+    async fd => {
+      const title = (fd.title || "").trim(), body = (fd.body || "").trim();
+      if(!title || !body){ toast(L("Συμπληρώστε θέμα και περιγραφή."), true); return false; }
+      const full = body + (fd.phone && fd.phone.trim() ? `\n\n${T("Τηλέφωνο επικοινωνίας", "Contact phone")}: ${fd.phone.trim()}` : "");
+      const ok = await guard(async () => { await API.portalSend({ kind:"new", title, body:full }); return true; });
+      if(!ok) return false;
+      S.pending.push({ kind:"new", title, body:full, created:nowIso() });
+      pFilter = "open"; render(); toast(L("Το αίτημα στάλθηκε. Θα εμφανιστεί εδώ με αριθμό σε 1–2 λεπτά και θα λάβετε επιβεβαίωση με email."));
+      setTimeout(poll, 70000); setTimeout(poll, 130000);
+    },
+    `<a class="mlink" href="${mailto(T("Νέο αίτημα: ","New request: "), T("Περιγράψτε το πρόβλημα ή το αίτημα:\n\n\nΤηλέφωνο επικοινωνίας:\n", "Describe the problem or request:\n\n\nContact phone:\n"))}">ή στείλτε email</a>`);
+  $("#msave").textContent = L("Αποστολή αιτήματος");
+  return close;
+}
+async function portalReply(t){
+  const ta = $("#pbody"), body = (ta.value || "").trim();
+  if(!body){ toast(L("Γράψτε πρώτα την απάντησή σας."), true); ta.focus(); return; }
+  const b = $("#psend"); b.disabled = true;
+  const ok = await guard(async () => { await API.portalSend({ kind:"reply", ref:t.id, title:t.no, body }); return true; });
+  b.disabled = false;
+  if(!ok) return;
+  S.pending.push({ kind:"reply", ref:t.id, body, created:nowIso() });
+  ta.value = ""; renderTimeline(); toast(L("Στάλθηκε. Ο τεχνικός θα το δει σε 1–2 λεπτά."));
+  const reload = async () => { if(S.open && S.open.id === t.id){ const cs = await API.comments(t.id).catch(() => null); if(cs && S.open && S.open.id === t.id){ S.comments = cs; renderTimeline(); } } };
+  setTimeout(reload, 70000); setTimeout(reload, 130000);
+}
 function renderPortal(m){
   if(S.view === "ticket" && S.open) return renderPortalTicket(m);
   const open = t => OPEN.includes(t.status);
   const rows = S.tickets.filter(t => pFilter === "all" ? true : pFilter === "open" ? open(t) : !open(t))
     .sort((a,b) => new Date(b.last || b.created) - new Date(a.last || a.created));
   const cnt = k => S.tickets.filter(t => k === "all" ? true : k === "open" ? open(t) : !open(t)).length;
+  const pend = pFilter === "done" ? [] : pendingNew();
   const client = portalClient();
   m.innerHTML = `${portalTop()}
   <div class="page-head"><h1>Αιτήματα${client ? `<small class="ph-sub">${esc(client)}</small>` : ""}</h1><div class="sp"></div>
-    <a class="btn cta" href="${mailto(T("Νέο αίτημα: ","New request: "), T("Περιγράψτε το πρόβλημα ή το αίτημα:\n\n\nΤηλέφωνο επικοινωνίας:\n", "Describe the problem or request:\n\n\nContact phone:\n"))}">${ICON.plus}Νέο αίτημα</a></div>
-  <p class="portal-note">${T(`Νέο αίτημα ανοίγει με email στο ${esc(SUPPORT)}. Θα εμφανιστεί εδώ μέσα σε λίγα λεπτά.`, `A new request opens by email to ${esc(SUPPORT)}. It will appear here within a few minutes.`)}</p>
+    <button class="btn cta" id="pNew">${ICON.plus}Νέο αίτημα</button></div>
+  <p class="portal-note">${T(`Ανοίξτε νέο αίτημα από εδώ ή με email στο ${esc(SUPPORT)}.`, `Open a new request here or by email to ${esc(SUPPORT)}.`)}</p>
   <div class="filters" role="tablist">${[["open","Ανοιχτά"],["done","Ολοκληρωμένα"],["all","Όλα"]].map(([k,l]) => `<button role="tab" class="${pFilter === k ? "on" : ""}" aria-selected="${pFilter === k}" data-pf="${k}">${l}<em>${cnt(k)}</em></button>`).join("")}</div>
   <div class="table">
     <div class="trow thead prow"><span class="c-no">Αριθμός</span><span>Θέμα</span><span class="c-status">Κατάσταση</span><span class="c-type">Τελευταία κίνηση</span></div>
+    ${pend.map(p => `<div class="trow prow pending-row">
+      <span class="tno c-no">—</span>
+      <span style="min-width:0"><span class="ttl" style="display:block">${esc(p.title)}</span><span class="tsub">${esc(S.me.name)}, ${fmt(p.created)}</span></span>
+      <span class="c-status"><span class="status st-new">Καταχωρείται…</span></span>
+      <span class="tsub c-type">${ago(p.created)}</span></div>`).join("")}
     ${rows.length ? rows.map(t => `<button class="trow prow" data-id="${t.id}">
       <span class="tno c-no">${esc(t.no)}</span>
       <span style="min-width:0"><span class="ttl" style="display:block">${esc(t.title)}</span><span class="tsub">${esc(t.reqName || t.reqEmail || "")}${t.reqName || t.reqEmail ? ", " : ""}${fmt(t.created)}</span></span>
       <span class="c-status">${pStatus(t.status)}</span>
       <span class="tsub c-type">${ago(t.last || t.created)}</span></button>`).join("")
-      : `<div class="empty">${S.tickets.length ? "Δεν υπάρχουν αιτήματα σε αυτή την προβολή." : "Δεν υπάρχουν ακόμα αιτήματα για την εταιρεία σας."}</div>`}
+      : pend.length ? "" : `<div class="empty">${S.tickets.length ? "Δεν υπάρχουν αιτήματα σε αυτή την προβολή." : "Δεν υπάρχουν ακόμα αιτήματα για την εταιρεία σας."}</div>`}
   </div>`;
   m.querySelectorAll("[data-pf]").forEach(b => b.onclick = () => { pFilter = b.dataset.pf; renderPortal(m); });
+  $("#pNew").onclick = portalNew;
   bindCommon(m);
 }
 function renderPortalTicket(m){
@@ -1537,8 +1608,12 @@ function renderPortalTicket(m){
         <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">${pStatus(t.status)}</div></div>
       <div class="timeline" id="tl"><div class="spin" style="margin:24px auto"></div></div>
       <div class="composer portal-reply">
-        <p style="margin:2px 0 12px;color:var(--dim);font-size:14px">${t.status === "Κλειστό" ? "Το αίτημα έχει ολοκληρωθεί. Αν το θέμα εμφανίστηκε ξανά, απαντήστε με email και θα ανοίξει ξανά." : "Για να απαντήσετε ή να στείλετε στοιχεία, στείλτε email. Η απάντησή σας θα εμφανιστεί εδώ."}</p>
-        <a class="btn" href="${mailto(`[${t.no}] ${t.title}`)}">Απάντηση με email</a>
+        ${t.status === "Κλειστό" || t.status === "Επιλύθηκε" ? `<p class="portal-hint">${L(t.status === "Κλειστό" ? "Το αίτημα έχει ολοκληρωθεί. Αν το θέμα εμφανίστηκε ξανά, γράψτε εδώ και θα ανοίξει ξανά." : "Η απάντησή σας πηγαίνει στον τεχνικό και εμφανίζεται εδώ σε 1–2 λεπτά.")}</p>` : ""}
+        <textarea id="pbody" aria-label="Η απάντησή σας" placeholder="Γράψτε την απάντησή σας ή στοιχεία που ζητήσαμε"></textarea>
+        <div class="crow">
+          <a class="btn quiet" href="${mailto(`[${t.no}] ${t.title}`)}">Με email</a>
+          <button class="btn" id="psend">Αποστολή</button>
+        </div>
       </div>
     </div>
     <div class="props">
@@ -1550,6 +1625,7 @@ function renderPortalTicket(m){
     </div>
   </div>`;
   $("#backBtn").onclick = () => { S.open = null; go("tickets"); };
+  $("#psend").onclick = () => portalReply(t);
   if(S.comments) renderTimeline();
 }
 
