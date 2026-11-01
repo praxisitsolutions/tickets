@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PRAXIS Tickets</title>
-<meta name="theme-color" content="#0A5C73">
+<meta name="theme-color" content="#14305C">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="PRAXIS Tickets">
@@ -13,28 +13,28 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 <script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"></script>
 <style>
 :root{
-  --side:#0A5C73; --side-ink:#D6EEF5; --side-dim:#8CC3D3;
-  --primary:#0E7490; --primary-ink:#fff; --accent:#06B6D4;
-  --bg:#EDF6FA; --surface:#FFFFFF; --sunken:#F4FAFC; --line:#D3E8EF; --line-strong:#B8DDE8;
-  --text:#164E63; --dim:#5B8FA8; --faint:#8DB3C4;
-  --ok:#0E7490; --warn:#C2780A; --bad:#C2321F; --done:#2F855A;
-  --focus:0 0 0 3px rgba(6,182,212,.45);
+  --side:#14305C; --side-ink:#E7F0F9; --side-dim:#9FB0C8;
+  --primary:#0E91DD; --primary-ink:#fff; --accent:#38AEF0;
+  --bg:#F9FAFB; --surface:#FFFFFF; --sunken:#F3F7FB; --line:#DCE8F7; --line-strong:#CDE0F9;
+  --text:#1F2937; --dim:#607085; --faint:#97A3B4;
+  --ok:#0E91DD; --warn:#EA580C; --bad:#DC2828; --done:#16A34A;
+  --focus:0 0 0 3px rgba(14,145,221,.4);
 }
 :root[data-theme="dark"]{
-  --side:#08222C; --side-ink:#CFE8F0; --side-dim:#6E9BAA;
-  --primary:#22A6C4; --primary-ink:#04222C; --accent:#3DD3EC;
-  --bg:#0C2A35; --surface:#113542; --sunken:#0F303C; --line:#1D4A59; --line-strong:#27606F;
-  --text:#E2F2F7; --dim:#93BFCD; --faint:#5F8D9C;
-  --ok:#3DD3EC; --warn:#F0A63A; --bad:#F2735E; --done:#5FCB8E;
+  --side:#0A1628; --side-ink:#DCE7F5; --side-dim:#7F8FA8;
+  --primary:#38AEF0; --primary-ink:#06223A; --accent:#7CCBF7;
+  --bg:#0E1A2E; --surface:#15243D; --sunken:#112038; --line:#22385A; --line-strong:#2C4670;
+  --text:#E6EEF8; --dim:#9AABC4; --faint:#62759A;
+  --ok:#38AEF0; --warn:#FB923C; --bad:#F87171; --done:#4ADE80;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--text);font:15px/1.5 "DM Sans",system-ui,sans-serif;-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,sans-serif;-webkit-text-size-adjust:100%}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:none;box-shadow:var(--focus);border-radius:6px}
@@ -44,8 +44,9 @@ button{cursor:pointer}
 /* ---------- shell ---------- */
 .shell{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
 aside.side{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh}
-.logo{font-family:"Bebas Neue",sans-serif;font-size:30px;letter-spacing:1.5px;line-height:1;padding:0 10px 22px;color:#fff}
-.logo span{display:block;font-family:"DM Sans";font-size:12px;letter-spacing:.2px;color:var(--side-dim);font-weight:500;margin-top:4px}
+.logo{font-family:Inter,sans-serif;font-weight:800;font-size:26px;letter-spacing:-.02em;line-height:1;padding:0 10px 22px;color:#fff}
+.logo b{font-weight:800;color:var(--accent)}
+.logo span{display:block;font-family:Inter;letter-spacing:0;font-size:12px;letter-spacing:.2px;color:var(--side-dim);font-weight:500;margin-top:4px}
 .nav{display:flex;flex-direction:column;gap:2px}
 .nav button{display:flex;align-items:center;gap:12px;border:0;background:none;color:var(--side-ink);padding:10px 12px;border-radius:8px;text-align:left;font-weight:500}
 .nav button svg{flex:none;opacity:.8}
@@ -79,7 +80,7 @@ input.field,select.field,textarea.field{border:1px solid var(--line-strong);back
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);background:var(--surface);border-radius:12px;margin-bottom:22px}
 .kpi{padding:18px 22px;border-left:1px solid var(--line)}
 .kpi:first-child{border-left:0}
-.kpi .n{font-family:"Bebas Neue",sans-serif;font-size:44px;line-height:1;letter-spacing:.5px}
+.kpi .n{font-weight:700;font-size:36px;line-height:1.1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .kpi .l{font-size:13px;color:var(--dim);margin-top:6px}
 .kpi.bad .n{color:var(--bad)}
 .dash{display:grid;grid-template-columns:1.4fr 1fr;gap:22px}
@@ -162,8 +163,8 @@ button.trow:hover{background:var(--sunken)}
 .inline-warn{font-size:13px;color:var(--warn);margin-top:6px}
 
 /* ---------- modal ---------- */
-.overlay{position:fixed;inset:0;background:rgba(6,30,38,.45);z-index:50}
-.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(600px,calc(100% - 24px));max-height:calc(100% - 32px);overflow:auto;background:var(--bg);border-radius:14px;z-index:51;box-shadow:0 24px 64px rgba(6,30,38,.35)}
+.overlay{position:fixed;inset:0;background:rgba(10,22,40,.45);z-index:50}
+.modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(600px,calc(100% - 24px));max-height:calc(100% - 32px);overflow:auto;background:var(--bg);border-radius:14px;z-index:51;box-shadow:0 24px 64px rgba(10,22,40,.35)}
 .modal header{padding:18px 22px 4px;font-weight:700;font-size:18px}
 .modal form{padding:10px 22px 22px;display:flex;flex-direction:column;gap:12px}
 .modal label{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--dim);font-weight:600}
@@ -176,7 +177,9 @@ button.trow:hover{background:var(--sunken)}
 /* ---------- login ---------- */
 .gate{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--side)}
 .gate .card{background:var(--surface);border-radius:16px;padding:36px 32px;max-width:400px;width:100%}
-.gate .logo{color:var(--side);padding:0 0 6px;font-size:40px}
+.gate .logo{color:var(--text);padding:0 0 10px;font-size:34px}
+.gate .logo b,.mtop .logo b{color:var(--primary)}
+.gate .logo span{font-size:14px;color:var(--dim)}
 .gate p{color:var(--dim);margin:0 0 22px}
 .gate .btn{width:100%;justify-content:center;padding:12px}
 .spin{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:s .8s linear infinite;margin:60px auto}
@@ -507,7 +510,7 @@ function renderShell(){
   $("#root").innerHTML = `
   <div class="shell">
     <aside class="side">
-      <div class="logo">PRAXIS<span>Υποστήριξη πελατών</span></div>
+      <div class="logo">Praxis<b>IT</b><span>Υποστήριξη πελατών</span></div>
       <nav class="nav" aria-label="Κύριο μενού">
         <button data-v="dash">${ICON.dash}Πίνακας ελέγχου</button>
         <button data-v="tickets">${ICON.tickets}Tickets <span class="count" id="navCount"></span></button>
@@ -534,7 +537,7 @@ function renderShell(){
   $("#logoutBtn").onclick = () => API.logout();
 }
 function go(view, push = true){ S.view = view; S.q = ""; if(push) history.pushState(null, "", "#" + view); render(); }
-function mtop(){ return `<div class="mtop"><div class="logo">PRAXIS</div><div class="sp"></div><button class="icon-btn" data-act="refresh" aria-label="Ανανέωση">${ICON.refresh}</button></div>`; }
+function mtop(){ return `<div class="mtop"><div class="logo">Praxis<b>IT</b></div><div class="sp"></div><button class="icon-btn" data-act="refresh" aria-label="Ανανέωση">${ICON.refresh}</button></div>`; }
 function render(){
   document.querySelectorAll("[data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === S.view));
   $("#navCount").textContent = fcount("open") || "";
@@ -918,7 +921,7 @@ function route(){
   if(m && S.tickets.some(t => t.id === +m[1])){ openTicket(+m[1], false); return; }
   S.open = null; S.view = ["dash","tickets","clients"].includes(h.slice(1)) ? h.slice(1) : "dash"; render();
 }
-function gate(inner){ $("#root").innerHTML = `<div class="gate"><div class="card"><div class="logo">PRAXIS TICKETS</div>${inner}</div></div>`; }
+function gate(inner){ $("#root").innerHTML = `<div class="gate"><div class="card"><div class="logo">Praxis<b>IT</b><span>Tickets</span></div>${inner}</div></div>`; }
 async function boot(){
   const st = await guard(() => API.start());
   if(st === "login"){ gate(`<p>Συνδέσου με τον λογαριασμό Microsoft 365 της PRAXIS IT.</p><button class="btn" id="loginBtn">Σύνδεση με Microsoft</button>`); $("#loginBtn").onclick = () => API.login(); return; }
