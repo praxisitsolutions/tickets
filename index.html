@@ -18,7 +18,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"></script>
 <style>
 :root{
-  --side:#14305C; --side-ink:#E7F0F9; --side-dim:#9FB0C8;
+  --side:#FFFFFF; --side-ink:#14305C; --side-dim:#607085; --side-logo:#14305C; --side-logo-b:#0E91DD;
+  --side-hover:#F1F6FC; --side-on:#E3F1FC; --side-line:#E3EAF3; --side-chip:#E3F1FC;
+  --navy:#14305C; --orange:#F97316; --cta:#EA580C; --cta-ink:#fff;
   --primary:#0E91DD; --primary-ink:#fff; --accent:#38AEF0;
   --bg:#F9FAFB; --surface:#FFFFFF; --sunken:#F3F7FB; --line:#DCE8F7; --line-strong:#CDE0F9;
   --text:#1F2937; --dim:#607085; --faint:#97A3B4;
@@ -26,7 +28,9 @@
   --focus:0 0 0 3px rgba(14,145,221,.4);
 }
 :root[data-theme="dark"]{
-  --side:#0A1628; --side-ink:#DCE7F5; --side-dim:#7F8FA8;
+  --side:#0A1628; --side-ink:#DCE7F5; --side-dim:#7F8FA8; --side-logo:#fff; --side-logo-b:#38AEF0;
+  --side-hover:rgba(255,255,255,.06); --side-on:rgba(255,255,255,.1); --side-line:rgba(255,255,255,.1); --side-chip:rgba(255,255,255,.14);
+  --navy:#0A1628; --orange:#FB923C; --cta:#F97316; --cta-ink:#1A0A00;
   --primary:#38AEF0; --primary-ink:#06223A; --accent:#7CCBF7;
   --bg:#0E1A2E; --surface:#15243D; --sunken:#112038; --line:#22385A; --line-strong:#2C4670;
   --text:#E6EEF8; --dim:#9AABC4; --faint:#62759A;
@@ -43,20 +47,21 @@ button{cursor:pointer}
 
 /* ---------- shell ---------- */
 .shell{display:grid;grid-template-columns:232px 1fr;min-height:100vh}
-aside.side{background:var(--side);color:var(--side-ink);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh}
-.logo{font-family:Inter,sans-serif;font-weight:800;font-size:26px;letter-spacing:-.02em;line-height:1;padding:0 10px 22px;color:#fff}
-.logo b{font-weight:800;color:var(--accent)}
+aside.side{background:var(--side);border-right:1px solid var(--side-line);color:var(--side-ink);display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh}
+.logo{font-family:Inter,sans-serif;font-weight:800;font-size:26px;letter-spacing:-.02em;line-height:1;padding:0 10px 22px;color:var(--side-logo)}
+.logo b{font-weight:800;color:var(--side-logo-b)}
 .logo span{display:block;font-family:Inter;letter-spacing:0;font-size:12px;letter-spacing:.2px;color:var(--side-dim);font-weight:500;margin-top:4px}
 .nav{display:flex;flex-direction:column;gap:2px}
-.nav button{display:flex;align-items:center;gap:12px;border:0;background:none;color:var(--side-ink);padding:10px 12px;border-radius:8px;text-align:left;font-weight:500}
+.nav button{position:relative;display:flex;align-items:center;gap:12px;border:0;background:none;color:var(--side-ink);padding:10px 12px;border-radius:8px;text-align:left;font-weight:500}
 .nav button svg{flex:none;opacity:.8}
-.nav button:hover{background:rgba(255,255,255,.06)}
-.nav button.on{background:rgba(255,255,255,.12);color:#fff}
+.nav button:hover{background:var(--side-hover)}
+.nav button.on{background:var(--side-on);color:var(--side-ink);font-weight:600}
+.nav button.on::before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--orange)}
 .nav button.on svg{opacity:1}
-.nav .count{margin-left:auto;font-size:12px;background:rgba(255,255,255,.14);padding:1px 8px;border-radius:999px}
-.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1)}
+.nav .count{margin-left:auto;font-size:12px;background:var(--side-chip);padding:1px 8px;border-radius:999px}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;padding-top:16px;border-top:1px solid var(--side-line)}
 .side-foot button{border:0;background:none;color:var(--side-dim);text-align:left;padding:8px 12px;border-radius:8px;display:flex;align-items:center;gap:10px;font-size:14px}
-.side-foot button:hover{color:#fff;background:rgba(255,255,255,.06)}
+.side-foot button:hover{color:var(--side-ink);background:var(--side-hover)}
 .who{padding:8px 12px;font-size:13px;color:var(--side-dim)}
 .who b{display:block;color:var(--side-ink);font-weight:600}
 
@@ -70,6 +75,7 @@ main{min-width:0;padding:28px 36px 60px}
 .btn:hover{filter:brightness(1.08)}
 .btn.quiet{background:transparent;color:var(--primary);border:1px solid var(--line-strong)}
 .btn.danger{background:transparent;color:var(--bad);border:1px solid var(--line-strong)}
+.btn.newbtn,.btn.cta{background:var(--cta);color:var(--cta-ink)}
 .btn:disabled{opacity:.5;cursor:default;filter:none}
 .icon-btn{border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;width:38px;height:38px;display:grid;place-items:center;color:var(--dim)}
 .icon-btn:hover{color:var(--primary)}
@@ -99,7 +105,7 @@ input.field,select.field,textarea.field{border:1px solid var(--line-strong);back
 /* ---------- ticket table ---------- */
 .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .filters button{border:1px solid var(--line-strong);background:var(--surface);border-radius:8px;padding:6px 12px;font-size:13px;color:var(--dim)}
-.filters button.on{background:var(--text);border-color:var(--text);color:var(--bg)}
+.filters button.on{background:var(--side-ink);border-color:var(--side-ink);color:var(--surface)}
 .filters button em{font-style:normal;opacity:.7;margin-left:4px}
 .table{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 .trow{display:grid;grid-template-columns:96px minmax(0,1fr) 128px 130px 130px 150px;gap:14px;align-items:center;padding:12px 18px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;color:inherit}
@@ -147,7 +153,7 @@ button.trow:hover{background:var(--sunken)}
 .composer{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:6px}
 .seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden;margin-bottom:10px}
 .seg button{border:0;background:none;padding:6px 12px;font-size:13px;font-weight:600;color:var(--dim)}
-.seg button.on{background:var(--text);color:var(--bg)}
+.seg button.on{background:var(--side-ink);color:var(--surface)}
 .composer textarea{border:0;background:transparent;width:100%;resize:vertical;min-height:80px;padding:4px 2px}
 .composer textarea:focus{box-shadow:none}
 .crow{display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px;margin-top:6px}
@@ -175,13 +181,13 @@ button.trow:hover{background:var(--sunken)}
 .toast.err{background:var(--bad);color:#fff}
 
 /* ---------- login ---------- */
-.gate{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--side)}
+.gate{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--navy);border-top:4px solid var(--orange)}
 .gate .card{background:var(--surface);border-radius:16px;padding:36px 32px;max-width:400px;width:100%}
 .gate .logo{color:var(--text);padding:0 0 10px;font-size:34px}
 .gate .logo b,.mtop .logo b{color:var(--primary)}
 .gate .logo span{font-size:14px;color:var(--dim)}
 .gate p{color:var(--dim);margin:0 0 22px}
-.gate .btn{width:100%;justify-content:center;padding:12px}
+.gate .btn{background:var(--cta);color:var(--cta-ink);width:100%;justify-content:center;padding:12px}
 .spin{width:26px;height:26px;border:3px solid var(--line);border-top-color:var(--primary);border-radius:50%;animation:s .8s linear infinite;margin:60px auto}
 @keyframes s{to{transform:rotate(360deg)}}
 
@@ -214,8 +220,8 @@ button.trow:hover{background:var(--sunken)}
   .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:var(--surface);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
   .tabbar button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--dim);padding:6px 0}
   .tabbar button.on{color:var(--primary)}
-  .tabbar .plus{color:var(--primary-ink)}
-  .tabbar .plus span{width:44px;height:44px;border-radius:12px;background:var(--primary);display:grid;place-items:center;margin-top:-2px}
+  .tabbar .plus{color:var(--cta-ink)}
+  .tabbar .plus span{width:44px;height:44px;border-radius:12px;background:var(--cta);display:grid;place-items:center;margin-top:-2px}
   .modal .grid2{grid-template-columns:1fr}
 }
 .mtop{display:none;align-items:center;gap:10px;margin:-2px 0 14px}
@@ -644,7 +650,7 @@ function renderTickets(m){
       <span class="c-prio">${prioHtml(t.priority)}</span>
       <span class="c-status">${statusHtml(t.status)}</span>
       <span class="c-sla">${slaHtml(t)}</span></button>`).join("")
-      : `<div class="empty">${S.q ? "Κανένα ticket δεν ταιριάζει με την αναζήτηση." : "Δεν υπάρχουν tickets σε αυτή την προβολή."}${S.filter === "open" && !S.q ? `<br><button class="btn" data-act="new">${ICON.plus}Νέο ticket</button>` : ""}</div>`}
+      : `<div class="empty">${S.q ? "Κανένα ticket δεν ταιριάζει με την αναζήτηση." : "Δεν υπάρχουν tickets σε αυτή την προβολή."}${S.filter === "open" && !S.q ? `<br><button class="btn cta" data-act="new">${ICON.plus}Νέο ticket</button>` : ""}</div>`}
   </div>`;
   m.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { S.filter = b.dataset.f; renderTickets(m); bindCommon(m); });
   const qi = $("#q"); qi.oninput = () => { S.q = qi.value; const p = qi.selectionStart; renderTickets(m); bindCommon(m); const n = $("#q"); n.focus(); n.setSelectionRange(p,p); };
