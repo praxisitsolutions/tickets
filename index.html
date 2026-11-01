@@ -489,6 +489,12 @@ const Graph = {
   async addTime(e){ return fromTime(await g(`/sites/${siteId}/lists/TicketTime/items`, { method:"POST", body:JSON.stringify({ fields:timeFields(e) }) })); },
   async updateTime(id, e){ await g(`/sites/${siteId}/lists/TicketTime/items/${id}/fields`, { method:"PATCH", body:JSON.stringify(timeFields(e)) }); },
   async deleteTime(id){ await g(`/sites/${siteId}/lists/TicketTime/items/${id}`, { method:"DELETE" }); },
+  async deleteTicket(id){
+    const cs = await allItems("TicketComments", `&$filter=fields/TicketRef eq ${id}`);
+    for(const c of cs) await g(`/sites/${siteId}/lists/TicketComments/items/${c.id}`, { method:"DELETE" });
+    for(const e of S.time.filter(x => x.ref === id)) await g(`/sites/${siteId}/lists/TicketTime/items/${e.id}`, { method:"DELETE" });
+    await g(`/sites/${siteId}/lists/Tickets/items/${id}`, { method:"DELETE" });
+  },
   async comments(id){ return (await allItems("TicketComments", `&$filter=fields/TicketRef eq ${id}`)).map(fromComment); },
   async createTicket(obj){
     const it = await g(`/sites/${siteId}/lists/Tickets/items`, { method:"POST", body:JSON.stringify({ fields: toFields(obj, T_MAP) }) });
@@ -562,6 +568,7 @@ const Demo = (() => {
     async addTime(e){ const x = { ...e, id:nTe++ }; time.push(x); return {...x}; },
     async updateTime(id, e){ Object.assign(time.find(x => x.id === id), e); },
     async deleteTime(id){ time.splice(time.findIndex(x => x.id === id), 1); },
+    async deleteTicket(id){ tickets.splice(tickets.findIndex(t => t.id === id), 1); for(let i = comments.length - 1; i >= 0; i--) if(comments[i].ref === id) comments.splice(i, 1); for(let i = time.length - 1; i >= 0; i--) if(time[i].ref === id) time.splice(i, 1); },
     async comments(id){ return comments.filter(c => c.ref === id).map(c => ({...c})); },
     async createTicket(o){ const t = { ...o, id:nT, no:ticketNo(nT), created:o.created || nowIso() }; nT++; tickets.unshift(t); return {...t}; },
     async updateTicket(id, o){ Object.assign(tickets.find(t => t.id === id), o); },
@@ -840,10 +847,13 @@ function renderTicket(m){
         Επίλυση έως ${fmt(t.resolveDue)}${t.resolved ? `, επιλύθηκε ${fmt(t.resolved)}` : ""}
         ${!t.due && !t.resolveDue ? `<br><span style="color:var(--dim)">Ο πελάτης δεν έχει σύμβαση, άρα δεν υπάρχει δέσμευση χρόνου.</span>` : ""}</div></div>
       ${spLink ? `<div class="prop"><a href="${spLink}" target="_blank" rel="noopener" style="color:var(--primary);font-size:14px">Συνημμένα στο SharePoint</a></div>` : ""}
+      <div class="prop"><button class="btn danger" id="delTicket" style="width:100%;justify-content:center">Διαγραφή ticket</button>
+        <div class="computed" id="delHint">Διαγράφονται και τα μηνύματα και οι ώρες του. Επαναφέρεται από τον κάδο ανακύκλωσης του SharePoint.</div></div>
     </div>
   </div>`;
   $("#backBtn").onclick = () => { S.open = null; go("tickets"); };
   bindProps(); bindTimePanel(t);
+  $("#delTicket").onclick = () => deleteTicket(t);
   if(closed) $("#reopenBtn").onclick = reopen; else bindComposer();
   if(S.comments) renderTimeline();
 }
@@ -924,6 +934,17 @@ async function changeTicket(patch, logText){
   t.last = nowIso();
   if(logText) await logEvent(logText);
   render(); toast("Αποθηκεύτηκε");
+}
+async function deleteTicket(t){
+  const b = $("#delTicket");
+  if(!b.dataset.armed){ b.dataset.armed = "1"; b.textContent = "Πάτα ξανά για επιβεβαίωση"; setTimeout(() => { if(b.isConnected && b.dataset.armed){ delete b.dataset.armed; b.textContent = "Διαγραφή ticket"; } }, 6000); return; }
+  b.disabled = true; b.textContent = "Διαγραφή…";
+  const tm = getTimer(); if(tm && tm.ref === t.id) setTimer(null);
+  const ok = await guard(async () => { await API.deleteTicket(t.id); return true; });
+  if(!ok){ b.disabled = false; delete b.dataset.armed; b.textContent = "Διαγραφή ticket"; return; }
+  S.tickets = S.tickets.filter(x => x.id !== t.id); S.time = S.time.filter(x => x.ref !== t.id);
+  if(snap) snap.delete(t.id);
+  S.open = null; go("tickets"); toast(`Το ${t.no} διαγράφηκε`);
 }
 async function reopen(){ await changeTicket({ status:"Σε εξέλιξη", resolved:"", last:nowIso() }, "Επανάνοιγμα ticket"); }
 async function sendComment(){
