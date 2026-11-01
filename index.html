@@ -227,9 +227,81 @@ button.trow:hover{background:var(--sunken)}
   .tabbar .plus span{width:44px;height:44px;border-radius:12px;background:var(--cta);display:grid;place-items:center;margin-top:-2px}
   .modal .grid2{grid-template-columns:1fr}
 }
+/* ---------- time tracking ---------- */
+.muted{color:var(--dim);margin:0;font-size:14px}
+.tpanel{margin-top:18px}
+.tp-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.tp-head h2{margin:0}
+.tp-head .sp{flex:1}
+.tp-head .btn{padding:7px 12px;font-size:14px}
+.btn.stop{background:var(--bad);color:#fff}
+.btn b,.tchip b{font-variant-numeric:tabular-nums;font-weight:700}
+.rec{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block;animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+.tlist{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.tentry{display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:12px;align-items:start;padding:10px 2px;border:0;border-bottom:1px solid var(--line);background:none;text-align:left;color:inherit;width:100%}
+.tentry:hover{background:var(--sunken)}
+.tentry .d{font-size:13px;font-variant-numeric:tabular-nums}
+.tentry small{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+.tentry .n{font-size:14px;overflow-wrap:anywhere;white-space:pre-wrap}
+.tentry .h{font-weight:700;font-variant-numeric:tabular-nums}
+.tchip{display:flex;align-items:center;gap:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--bad);border-radius:8px;padding:7px 10px;font-size:13px;font-weight:600;margin:0 0 10px}
+.tchip b{color:var(--text);margin-left:auto}
+.mtop .tchip{margin:0;padding:6px 9px}
+.modal .grid3{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px}
+.modal label.check{flex-direction:row;align-items:center;gap:8px;color:var(--text);font-weight:500}
+.modal label.check input{width:18px;height:18px;accent-color:var(--primary)}
+.tm-ticket{font-weight:600;font-size:14px}
+.tm-ticket span{font-weight:400;color:var(--dim);font-size:13px}
+/* ---------- reports ---------- */
+.rp-controls{display:flex;flex-direction:column;gap:12px;margin-bottom:20px}
+.rp-controls .filters{margin:0}
+.rp-row{display:grid;grid-template-columns:150px 150px minmax(0,260px) minmax(0,220px);gap:12px}
+.rp-row label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--dim);font-weight:600}
+.rp-dash{grid-template-columns:1.3fr 1fr;margin-bottom:22px}
+.rp-sec{margin-bottom:22px}
+.rbar .b{position:relative}
+.rbar .b u{position:absolute;left:0;top:0;bottom:0;background:var(--orange);border-radius:4px}
+.rbar .v{width:auto}
+.hbar.rbar{grid-template-columns:minmax(90px,170px) 1fr 52px}
+.rt-wrap{overflow-x:auto;margin:0 -4px}
+.rt{width:100%;border-collapse:collapse;font-size:14px}
+.rt th{text-align:left;font-size:12px;color:var(--dim);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--line-strong);white-space:nowrap}
+.rt td{padding:9px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.rt td small{color:var(--dim);font-size:12px}
+.rt tbody tr{cursor:pointer}
+.rt tbody tr:hover{background:var(--sunken)}
+.rt .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.rt .nowrap{white-space:nowrap}
+.rt tfoot td{border-bottom:0;border-top:2px solid var(--line-strong);font-weight:600}
+.print-head,.print-foot{display:none}
+@media print{
+  @page{margin:14mm}
+  html,body{background:#fff!important;color:#111!important}
+  aside.side,.tabbar,.mtop,.page-head,.rp-controls,.demo,.toast,#layer{display:none!important}
+  .shell{display:block}
+  main{padding:0}
+  .print-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:2px solid #14305C;padding-bottom:10px;margin-bottom:16px;font-size:13px;text-align:right}
+  .print-head .logo{color:#14305C;padding:0;font-size:26px}
+  .print-head .logo b{color:#0E91DD}
+  .print-foot{display:block;font-size:11px;color:#555;margin-top:12px}
+  .panel,.kpis{border-color:#ccc;break-inside:avoid;box-shadow:none}
+  .rp-dash{grid-template-columns:1fr 1fr}
+  .rt tbody tr:hover{background:none}
+  .rt{font-size:12px}
+}
 .mtop{display:none;align-items:center;gap:10px;margin:-2px 0 14px}
 .mtop .logo{color:var(--text);padding:0;font-size:24px}
 .mtop .sp{flex:1}
+@media (max-width:860px){
+  .modal .grid3{grid-template-columns:1fr 1fr}
+  .modal .grid3 label:first-child{grid-column:1 / span 2}
+  .rp-row{grid-template-columns:1fr 1fr}
+  .rp-row label{min-width:0}
+  .rp-dash{grid-template-columns:1fr}
+  .tentry{grid-template-columns:78px minmax(0,1fr) auto}
+  .rt{font-size:13px}
+}
 </style>
 </head>
 <body>
@@ -264,7 +336,7 @@ const SLA_M = CFG.slaMatrix || {"P1 Κρίσιμο":{response:60,resolve:240},"P
 const BH = CFG.businessHours || {start:9,end:17,days:[1,2,3,4,5]};
 const HOLI = new Set(CFG.holidays || []);
 
-const S = { view:"dash", filter:"open", q:"", tickets:[], clients:[], me:{name:"",email:""}, open:null, comments:[] };
+const S = { view:"dash", filter:"open", q:"", tickets:[], clients:[], me:{name:"",email:""}, open:null, comments:[], time:[], timeMissing:false };
 const $ = (s, r=document) => r.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const ticketNo = id => PREFIX + String(id).padStart(5,"0");
@@ -367,6 +439,11 @@ function fromClient(it){ const f = it.fields || {}; return { id:+it.id, name:f.T
 const C_MAP = {name:"Title",domain:"Domain",tier:"Tier",sla:"SLAHours",tech:"DefaultTechnician",phone:"Phone",notes:"Notes"};
 function fromComment(it){ const f = it.fields || {}; return { id:+it.id, ref:+f.TicketRef, body:f.Body || "", dir:f.Direction || DIR.NOTE, author:f.AuthorName || "", sent:!!f.Sent, created:f.Created }; }
 
+function fromTime(it){ const f = it.fields || {}; return { id:+it.id, ref:+f.TicketRef, no:f.TicketNo || "", client:f.ClientName || "", tech:f.Technician || "", techName:f.TechName || "",
+  start:f.WorkStart, end:f.WorkEnd, minutes:+f.Minutes || 0, note:f.Note || "", billable:!!f.Billable, kind:f.WorkType || "Απομακρυσμένα" }; }
+const timeFields = e => ({ Title:(e.no + " " + (e.note || "")).slice(0,250), TicketRef:e.ref, TicketNo:e.no, ClientName:e.client, Technician:e.tech, TechName:e.techName,
+  WorkStart:e.start, WorkEnd:e.end, Minutes:e.minutes, Note:e.note, Billable:e.billable, WorkType:e.kind });
+
 /* ================= backend: Microsoft Graph ================= */
 const SCOPES = ["User.Read","Sites.ReadWrite.All"];
 let msalApp = null, account = null, siteId = null;
@@ -405,7 +482,13 @@ const Graph = {
   },
   login(){ return msalApp.loginRedirect({ scopes:SCOPES }); },
   logout(){ return msalApp.logoutRedirect({ account }); },
-  async load(){ const [t, c] = await Promise.all([allItems("Tickets"), allItems("TicketClients")]); S.tickets = t.map(fromTicket); S.clients = c.map(fromClient); },
+  async load(){
+    const [t, c, tt] = await Promise.all([allItems("Tickets"), allItems("TicketClients"), allItems("TicketTime").catch(e => e.status === 404 ? null : Promise.reject(e))]);
+    S.tickets = t.map(fromTicket); S.clients = c.map(fromClient); S.timeMissing = !tt; S.time = (tt || []).map(fromTime);
+  },
+  async addTime(e){ return fromTime(await g(`/sites/${siteId}/lists/TicketTime/items`, { method:"POST", body:JSON.stringify({ fields:timeFields(e) }) })); },
+  async updateTime(id, e){ await g(`/sites/${siteId}/lists/TicketTime/items/${id}/fields`, { method:"PATCH", body:JSON.stringify(timeFields(e)) }); },
+  async deleteTime(id){ await g(`/sites/${siteId}/lists/TicketTime/items/${id}`, { method:"DELETE" }); },
   async comments(id){ return (await allItems("TicketComments", `&$filter=fields/TicketRef eq ${id}`)).map(fromComment); },
   async createTicket(obj){
     const it = await g(`/sites/${siteId}/lists/Tickets/items`, { method:"POST", body:JSON.stringify({ fields: toFields(obj, T_MAP) }) });
@@ -460,10 +543,25 @@ const Demo = (() => {
     { id:4, ref:11, dir:DIR.NOTE, author:"Reinaldo Dhami", body:"Αν συνεχίσει, αλλαγή καλωδίου PoE στη θύρα 14.", created:h(28.9) },
     { id:5, ref:11, dir:DIR.SYS, author:"Reinaldo Dhami", body:"Κατάσταση: Σε εξέλιξη → Αναμονή πελάτη", created:h(28.9) }
   ];
-  let nT = 15, nC = 6, nCl = 5;
+  const at = (daysAgo, hh, mm, dur) => { const d = addDays(athensParts(nowIso()).date, -daysAgo), s = fromLocal(d, `${hh}:${mm}`); return { start:s.toISOString(), end:new Date(s.getTime() + dur*60000).toISOString(), minutes:dur }; };
+  const te = (id, ref, when, note, kind, billable) => { const t = tickets.find(x => x.id === ref); return { id, ref, no:t.no, client:t.client, tech:"adamis@praxisit.gr", techName:"Reinaldo Dhami", note, kind, billable, ...when }; };
+  const time = [
+    te(1, 6, at(12, "10","00", 90), "Ρύθμιση Veeam backup και δοκιμή επαναφοράς", "Επί τόπου", false),
+    te(2, 7, at(9, "09","30", 45), "Αλλαγή καναλιών στα access points", "Απομακρυσμένα", false),
+    te(3, 7, at(8, "14","00", 120), "Αντικατάσταση access point στο λογιστήριο", "Επί τόπου", true),
+    te(4, 8, at(4, "11","15", 60), "Καθαρισμός startup και αναβάθμιση μνήμης", "Επί τόπου", true),
+    te(5, 11, at(1, "10","05", 20), "Επανεκκίνηση εσωτερικού 101", "Απομακρυσμένα", false),
+    te(6, 12, at(1, "12","00", 25), "Δημιουργία χρήστη M365 και άδειας", "Απομακρυσμένα", false),
+    te(7, 9, at(0, "09","10", 35), "Επανεγκατάσταση οδηγού εκτυπωτή", "Τηλεφωνικά", true),
+    te(8, 10, at(2, "16","00", 50), "Επικοινωνία με Dell για αντικατάσταση δίσκου", "Τηλεφωνικά", false)
+  ];
+  let nT = 15, nC = 6, nCl = 5, nTe = 9;
   return {
     async start(){ S.me = { name:"Reinaldo Dhami", email:"adamis@praxisit.gr" }; return "ok"; },
-    async load(){ S.tickets = structuredClone(tickets); S.clients = structuredClone(clients); },
+    async load(){ S.tickets = structuredClone(tickets); S.clients = structuredClone(clients); S.time = structuredClone(time); },
+    async addTime(e){ const x = { ...e, id:nTe++ }; time.push(x); return {...x}; },
+    async updateTime(id, e){ Object.assign(time.find(x => x.id === id), e); },
+    async deleteTime(id){ time.splice(time.findIndex(x => x.id === id), 1); },
     async comments(id){ return comments.filter(c => c.ref === id).map(c => ({...c})); },
     async createTicket(o){ const t = { ...o, id:nT, no:ticketNo(nT), created:o.created || nowIso() }; nT++; tickets.unshift(t); return {...t}; },
     async updateTicket(id, o){ Object.assign(tickets.find(t => t.id === id), o); },
@@ -495,6 +593,8 @@ const ICON = {
   plus:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
   refresh:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>',
   moon:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  play:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg>',
+  report:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   back:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>'
 };
 
@@ -524,7 +624,9 @@ function renderShell(){
         <button data-v="dash">${ICON.dash}Πίνακας ελέγχου</button>
         <button data-v="tickets">${ICON.tickets}Tickets <span class="count" id="navCount"></span></button>
         <button data-v="clients">${ICON.clients}Πελάτες</button>
+        <button data-v="reports">${ICON.report}Αναφορές</button>
       </nav>
+      <div id="sideTimer" style="margin-top:14px"></div>
       <div class="side-foot">
         <button id="themeBtn">${ICON.moon}Σκούρο / φωτεινό θέμα</button>
         <div class="who"><b>${esc(S.me.name)}</b>${esc(S.me.email)}</div>
@@ -538,25 +640,29 @@ function renderShell(){
     <button data-v="tickets">${ICON.tickets}Tickets</button>
     <button class="plus" id="tabNew"><span>${ICON.plus}</span></button>
     <button data-v="clients">${ICON.clients}Πελάτες</button>
-    <button id="tabTheme">${ICON.moon}Θέμα</button>
+    <button data-v="reports">${ICON.report}Αναφορές</button>
   </nav>`;
   document.querySelectorAll("[data-v]").forEach(b => b.onclick = () => go(b.dataset.v));
-  $("#themeBtn").onclick = toggleTheme; $("#tabTheme").onclick = toggleTheme;
+  $("#themeBtn").onclick = toggleTheme;
   $("#tabNew").onclick = newTicket;
   $("#logoutBtn").onclick = () => API.logout();
 }
 function go(view, push = true){ S.view = view; S.q = ""; if(push) history.pushState(null, "", "#" + view); render(); }
-function mtop(){ return `<div class="mtop"><div class="logo">Praxis<b>IT</b></div><div class="sp"></div><button class="icon-btn" data-act="refresh" aria-label="Ανανέωση">${ICON.refresh}</button></div>`; }
+function mtop(){ return `<div class="mtop"><div class="logo">Praxis<b>IT</b></div><div class="sp"></div>${timerChip()}<button class="icon-btn" data-act="theme" aria-label="Σκούρο ή φωτεινό θέμα">${ICON.moon}</button><button class="icon-btn" data-act="refresh" aria-label="Ανανέωση">${ICON.refresh}</button></div>`; }
 function render(){
   document.querySelectorAll("[data-v]").forEach(b => b.classList.toggle("on", b.dataset.v === S.view));
   $("#navCount").textContent = fcount("open") || "";
   const m = $("#main");
   if(S.view === "ticket" && S.open) renderTicket(m);
   else if(S.view === "clients") renderClients(m);
+  else if(S.view === "reports") renderReports(m);
   else if(S.view === "tickets") renderTickets(m);
   else renderDash(m);
   m.querySelectorAll('[data-act="refresh"]').forEach(b => b.onclick = refresh);
   m.querySelectorAll('[data-act="new"]').forEach(b => b.onclick = newTicket);
+  m.querySelectorAll('[data-act="theme"]').forEach(b => b.onclick = toggleTheme);
+  const st = $("#sideTimer"); if(st) st.innerHTML = timerChip();
+  document.querySelectorAll("[data-timer-open]").forEach(b => b.onclick = () => openTicket(+b.dataset.timerOpen));
   window.scrollTo(0, 0);
 }
 const demoBanner = () => DEMO ? `<div class="demo">Λειτουργία επίδειξης με δοκιμαστικά δεδομένα. Τίποτα δεν αποθηκεύεται.</div>` : "";
@@ -701,6 +807,7 @@ function renderTicket(m){
           <button class="btn" id="sendBtn"></button>
         </div>
       </div>`}
+      <div id="timeBox">${timePanelHtml(t)}</div>
     </div>
     <div class="props">
       <div class="prop"><label for="p-status">Κατάσταση</label>
@@ -730,7 +837,7 @@ function renderTicket(m){
     </div>
   </div>`;
   $("#backBtn").onclick = () => { S.open = null; go("tickets"); };
-  bindProps();
+  bindProps(); bindTimePanel(t);
   if(closed) $("#reopenBtn").onclick = reopen; else bindComposer();
   if(S.comments) renderTimeline();
 }
@@ -830,6 +937,231 @@ async function sendComment(){
   toast(replyMode === DIR.OUT ? "Η απάντηση θα σταλεί σε λίγα δευτερόλεπτα" : "Η σημείωση αποθηκεύτηκε");
 }
 
+/* ================= time tracking ================= */
+const WORK_TYPES = ["Απομακρυσμένα","Επί τόπου","Τηλεφωνικά"];
+const fmtDur = m => { m = Math.max(0, Math.round(m || 0)); return `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")}`; };
+const decH = m => (Math.round((m || 0) / 60 * 100) / 100).toLocaleString("el-GR", { minimumFractionDigits:2, maximumFractionDigits:2 });
+function athensParts(iso){ const w = wall(new Date(iso)).toISOString(); return { date:w.slice(0,10), time:w.slice(11,16) }; }
+function fromLocal(date, time){ const [y,m,d] = date.split("-").map(Number), [hh,mm] = (time || "00:00").split(":").map(Number); return unwall(new Date(Date.UTC(y, m-1, d, hh, mm))); }
+function addDays(date, n){ const [y,m,d] = date.split("-").map(Number); return new Date(Date.UTC(y, m-1, d + n)).toISOString().slice(0,10); }
+const fmtDay = date => { const [y,m,d] = date.split("-"); return `${d}/${m}/${y}`; };
+const ticketTime = id => S.time.filter(e => e.ref === id);
+
+/* running timer: kept in this browser only */
+const TIMER_KEY = "praxis-timer";
+function getTimer(){ try { const v = JSON.parse(localStorage.getItem(TIMER_KEY) || "null"); return v && v.ref && v.start ? v : null; } catch(_){ return null; } }
+function setTimer(v){ try { v ? localStorage.setItem(TIMER_KEY, JSON.stringify(v)) : localStorage.removeItem(TIMER_KEY); } catch(_){} }
+const elapsed = start => { const s = Math.max(0, Math.floor((Date.now() - new Date(start)) / 1000)); return `${Math.floor(s/3600)}:${String(Math.floor(s/60)%60).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`; };
+setInterval(() => { const tm = getTimer(); document.querySelectorAll("[data-tick]").forEach(el => el.textContent = tm ? elapsed(tm.start) : ""); }, 1000);
+function timerChip(){
+  const tm = getTimer(); if(!tm) return "";
+  const t = S.tickets.find(x => x.id === tm.ref);
+  return `<button class="tchip" data-timer-open="${tm.ref}" title="Άνοιγμα ticket"><span class="rec" aria-hidden="true"></span>${esc(t ? t.no : "Χρονόμετρο")}<b data-tick>${elapsed(tm.start)}</b></button>`;
+}
+function startTimer(t){
+  const cur = getTimer();
+  if(cur && cur.ref !== t.id){ const o = S.tickets.find(x => x.id === cur.ref); toast(`Τρέχει ήδη χρονόμετρο στο ${o ? o.no : "άλλο ticket"}. Σταμάτησέ το πρώτα.`, true); return; }
+  setTimer({ ref:t.id, start:nowIso() }); render(); toast("Το χρονόμετρο ξεκίνησε");
+}
+function stopTimer(){
+  const tm = getTimer(); if(!tm) return;
+  const t = S.tickets.find(x => x.id === tm.ref);
+  if(!t){ setTimer(null); render(); return; }
+  const st = new Date(tm.start); st.setSeconds(0, 0);
+  const en = new Date(Math.max(Date.now(), st.getTime() + 60000)); if(en.getSeconds() || en.getMilliseconds()){ en.setSeconds(0, 0); en.setMinutes(en.getMinutes() + 1); }
+  timeModal(t, null, { start:st.toISOString(), end:en.toISOString(), fromTimer:true });
+}
+
+/* add or edit one entry */
+function timeModal(t, e, pre = {}){
+  const now = athensParts(nowIso());
+  const s = e ? athensParts(e.start) : pre.start ? athensParts(pre.start) : { date:now.date, time:"" };
+  const en = e ? athensParts(e.end) : pre.end ? athensParts(pre.end) : { date:now.date, time:"" };
+  const cl = clientOf(t);
+  const billDef = e ? e.billable : !cl || cl.tier === "Χωρίς σύμβαση";
+  const techOpts = TECHS.map(x => [x.email, x.name]); if(!TECHS.some(x => x.email === S.me.email)) techOpts.unshift([S.me.email, S.me.name]);
+  const close = modal(e ? "Επεξεργασία χρόνου" : "Καταχώρηση χρόνου", `
+    <div class="tm-ticket">${esc(t.no)}, ${esc(t.title)}<br><span>${esc(t.client || "χωρίς πελάτη")}</span></div>
+    <div class="grid3">
+      <label>Ημερομηνία<input class="field" type="date" name="date" required value="${s.date}"></label>
+      <label>Από<input class="field" type="time" name="from" required value="${s.time}"></label>
+      <label>Έως<input class="field" type="time" name="to" required value="${en.time}"></label>
+    </div>
+    <div class="computed" id="tm-dur" aria-live="polite"></div>
+    <div class="grid2">
+      <label>Τύπος εργασίας<select class="field" name="kind">${opt(WORK_TYPES, e ? e.kind : "Απομακρυσμένα")}</select></label>
+      <label>Τεχνικός<select class="field" name="tech">${opt(techOpts, e ? e.tech : S.me.email)}</select></label>
+    </div>
+    <label>Τι έγινε<textarea class="field" name="note" rows="3" placeholder="Σύντομη περιγραφή της εργασίας, εμφανίζεται στην αναφορά του πελάτη">${esc(e ? e.note : "")}</textarea></label>
+    <label class="check"><input type="checkbox" name="billable" ${billDef ? "checked" : ""}> Χρεώνεται επιπλέον (εκτός σύμβασης)</label>`,
+    async fd => {
+      const r = calc(fd); if(!r) return false;
+      const obj = { ref:t.id, no:t.no, client:t.client || "", tech:fd.tech, techName:techName(fd.tech), start:r.start.toISOString(), end:r.end.toISOString(),
+        minutes:r.min, note:(fd.note || "").trim(), billable:!!fd.billable, kind:fd.kind };
+      if(e){ const ok = await guard(async () => { await API.updateTime(e.id, obj); return true; }); if(!ok) return false; Object.assign(e, obj); }
+      else { const x = await guard(() => API.addTime(obj)); if(!x) return false; S.time.push(x); }
+      if(pre.fromTimer) setTimer(null);
+      render(); toast(e ? "Αποθηκεύτηκε" : `Καταχωρήθηκαν ${fmtDur(r.min)} ώρες`);
+    },
+    (e ? `<button type="button" class="btn danger" id="tm-del">Διαγραφή</button>` : "") + (pre.fromTimer ? `<button type="button" class="btn quiet" id="tm-discard">Απόρριψη χρονομέτρου</button>` : ""));
+  const f = $("#mform");
+  function calc(fd){
+    if(!fd.date || !fd.from || !fd.to){ toast("Συμπλήρωσε ημερομηνία, από και έως.", true); return null; }
+    const start = fromLocal(fd.date, fd.from); let end = fromLocal(fd.date, fd.to);
+    if(end < start) end = fromLocal(addDays(fd.date, 1), fd.to);
+    const min = Math.round((end - start) / 60000);
+    if(min < 1 || min > 24*60){ toast("Η διάρκεια πρέπει να είναι από 1 λεπτό έως 24 ώρες.", true); return null; }
+    return { start, end, min };
+  }
+  const upd = () => {
+    const fd = Object.fromEntries(new FormData(f)); if(!fd.date || !fd.from || !fd.to){ $("#tm-dur").textContent = ""; return; }
+    const start = fromLocal(fd.date, fd.from); let end = fromLocal(fd.date, fd.to); const next = end < start; if(next) end = fromLocal(addDays(fd.date, 1), fd.to);
+    $("#tm-dur").textContent = `Διάρκεια ${fmtDur((end - start) / 60000)} ώρες${next ? ", λήγει την επόμενη ημέρα" : ""}`;
+  };
+  f.querySelectorAll('input[type="date"],input[type="time"]').forEach(i => i.oninput = upd); upd();
+  if(e) $("#tm-del").onclick = () => { const b = $("#tm-del");
+    if(b.dataset.armed){ guard(async () => { await API.deleteTime(e.id); return true; }).then(ok => { if(ok){ S.time = S.time.filter(x => x.id !== e.id); close(); render(); toast("Η καταχώρηση διαγράφηκε"); } }); }
+    else { b.dataset.armed = "1"; b.textContent = "Πάτα ξανά για διαγραφή"; } };
+  if(pre.fromTimer) $("#tm-discard").onclick = () => { setTimer(null); close(); render(); toast("Το χρονόμετρο μηδενίστηκε"); };
+}
+
+/* panel inside a ticket */
+function timePanelHtml(t){
+  if(S.timeMissing) return `<section class="panel tpanel"><h2>Χρόνος εργασίας</h2><p class="muted">Η λίστα TicketTime δεν βρέθηκε στο SharePoint.</p></section>`;
+  const list = ticketTime(t.id).slice().sort((a,b) => new Date(b.start) - new Date(a.start));
+  const tot = list.reduce((a,e) => a + e.minutes, 0), bill = list.filter(e => e.billable).reduce((a,e) => a + e.minutes, 0);
+  const tm = getTimer(), mine = tm && tm.ref === t.id;
+  return `<section class="panel tpanel">
+    <div class="tp-head"><h2>Χρόνος εργασίας<small>${list.length ? `σύνολο ${fmtDur(tot)}${bill ? `, χρεώσιμο ${fmtDur(bill)}` : ""}` : ""}</small></h2><span class="sp"></span>
+      ${mine ? `<button class="btn stop" id="tStop"><span class="rec" aria-hidden="true"></span>Διακοπή <b data-tick>${elapsed(tm.start)}</b></button>`
+             : `<button class="btn quiet" id="tStart">${ICON.play}Χρονόμετρο</button>`}
+      <button class="btn quiet" id="tAdd">${ICON.plus}Καταχώρηση</button></div>
+    ${list.length ? `<div class="tlist">${list.map(e => { const a = athensParts(e.start), b = athensParts(e.end);
+      return `<button class="tentry" data-te="${e.id}"><span class="d">${fmtDay(a.date)}<br><small>${a.time}–${b.time}</small></span>
+        <span class="n">${esc(e.note || "Χωρίς περιγραφή")}<small>${esc(e.techName || techName(e.tech))}, ${esc(e.kind)}${e.billable ? ", χρεώσιμο" : ""}</small></span>
+        <span class="h">${fmtDur(e.minutes)}</span></button>`; }).join("")}</div>`
+      : `<p class="muted">Δεν έχει καταγραφεί χρόνος. Πάτα «Χρονόμετρο» όταν ξεκινάς ή «Καταχώρηση» για χρόνο που έγινε ήδη.</p>`}
+  </section>`;
+}
+function bindTimePanel(t){
+  $("#tStart")?.addEventListener("click", () => startTimer(t));
+  $("#tStop")?.addEventListener("click", stopTimer);
+  $("#tAdd")?.addEventListener("click", () => timeModal(t));
+  document.querySelectorAll("[data-te]").forEach(b => b.onclick = () => { const e = S.time.find(x => x.id === +b.dataset.te); if(e) timeModal(t, e); });
+}
+
+/* ================= reports ================= */
+const R = { preset:"month", from:"", to:"", client:"", tech:"" };
+function presetRange(p){
+  const today = athensParts(nowIso()).date, [y,m] = today.split("-").map(Number);
+  const mStart = (yy, mm) => `${yy}-${String(mm).padStart(2,"0")}-01`;
+  const mEnd = (yy, mm) => addDays(mm === 12 ? mStart(yy+1, 1) : mStart(yy, mm+1), -1);
+  if(p === "month") return [mStart(y,m), mEnd(y,m)];
+  if(p === "last"){ const yy = m === 1 ? y-1 : y, mm = m === 1 ? 12 : m-1; return [mStart(yy,mm), mEnd(yy,mm)]; }
+  if(p === "week"){ const dow = (new Date(today + "T00:00:00Z").getUTCDay() + 6) % 7; const s = addDays(today, -dow); return [s, addDays(s, 6)]; }
+  if(p === "year") return [`${y}-01-01`, `${y}-12-31`];
+  return [R.from || mStart(y,m), R.to || today];
+}
+function reportData(){
+  if(R.preset !== "custom") [R.from, R.to] = presetRange(R.preset);
+  const a = fromLocal(R.from, "00:00"), b = fromLocal(addDays(R.to, 1), "00:00");
+  const inR = iso => iso && new Date(iso) >= a && new Date(iso) < b;
+  const ent = S.time.filter(e => inR(e.start) && (!R.client || e.client === R.client) && (!R.tech || (e.tech || "").toLowerCase() === R.tech.toLowerCase()))
+    .sort((x,y) => new Date(x.start) - new Date(y.start));
+  const tk = S.tickets.filter(t => !R.client || t.client === R.client).filter(t => !R.tech || (t.tech || "").toLowerCase() === R.tech.toLowerCase());
+  const created = tk.filter(t => inR(t.created)), resolved = tk.filter(t => inR(t.resolved));
+  const withSla = resolved.filter(t => t.resolveDue), met = withSla.filter(t => new Date(t.resolved) <= new Date(t.resolveDue)).length;
+  const sum = arr => arr.reduce((s,e) => s + e.minutes, 0);
+  const group = key => { const o = {}; ent.forEach(e => { const k = key(e) || "—"; (o[k] ||= { min:0, bill:0, n:0, tickets:new Set() }); o[k].min += e.minutes; if(e.billable) o[k].bill += e.minutes; o[k].n++; o[k].tickets.add(e.ref); }); return Object.entries(o).sort((x,y) => y[1].min - x[1].min); };
+  return { ent, total:sum(ent), bill:sum(ent.filter(e => e.billable)), created, resolved, slaPct: withSla.length ? Math.round(met / withSla.length * 100) : null,
+    byClient:group(e => e.client || "Χωρίς πελάτη"), byTech:group(e => e.techName || techName(e.tech)), byTicket:group(e => String(e.ref)), byKind:group(e => e.kind) };
+}
+function renderReports(m){
+  const d = reportData();
+  const clients = [...new Set([...S.clients.map(c => c.name), ...S.time.map(e => e.client).filter(Boolean)])].sort((x,y) => x.localeCompare(y,"el"));
+  const techs = [...new Map([...TECHS.map(t => [t.email.toLowerCase(), t.name]), ...S.time.map(e => [(e.tech || "").toLowerCase(), e.techName || e.tech])]).entries()].filter(x => x[0]);
+  const maxC = Math.max(1, ...d.byClient.map(x => x[1].min)), maxT = Math.max(1, ...d.byTech.map(x => x[1].min));
+  const bar = (rows, max) => rows.map(([k,v]) => `<div class="hbar rbar"><span class="t" title="${esc(k)}">${esc(k)}</span><span class="b"><i style="width:${v.min/max*100}%"></i><u style="width:${v.bill/max*100}%"></u></span><span class="v">${fmtDur(v.min)}</span></div>`).join("");
+  const period = `${fmtDay(R.from)} έως ${fmtDay(R.to)}`;
+  const tTitle = id => { const t = S.tickets.find(x => x.id === +id); return t ? `${t.no}, ${t.title}` : `#${id}`; };
+  m.innerHTML = `${mtop()}${demoBanner()}
+  <div class="page-head"><h1>Αναφορές</h1><div class="sp"></div>
+    <button class="btn quiet" id="rCsv">Εξαγωγή CSV</button><button class="btn" id="rPrint">Εκτύπωση ή PDF</button></div>
+  <div class="rp-controls">
+    <div class="filters" role="tablist">${[["week","Εβδομάδα"],["month","Αυτός ο μήνας"],["last","Προηγούμενος μήνας"],["year","Φέτος"],["custom","Επιλογή ημερομηνιών"]].map(([k,l]) => `<button role="tab" class="${R.preset === k ? "on" : ""}" aria-selected="${R.preset === k}" data-p="${k}">${l}</button>`).join("")}</div>
+    <div class="rp-row">
+      <label>Από<input class="field" type="date" id="rFrom" value="${R.from}"></label>
+      <label>Έως<input class="field" type="date" id="rTo" value="${R.to}"></label>
+      <label>Πελάτης<select class="field" id="rClient">${opt([["","Όλοι οι πελάτες"], ...clients], R.client)}</select></label>
+      <label>Τεχνικός<select class="field" id="rTech">${opt([["","Όλοι"], ...techs], R.tech)}</select></label>
+    </div>
+  </div>
+  <div class="print-head"><div class="logo">Praxis<b>IT</b></div><div><b>Αναφορά εργασιών</b><br>${esc(R.client || "Όλοι οι πελάτες")}<br>Περίοδος ${period}</div></div>
+  <div class="kpis">
+    <div class="kpi"><div class="n">${fmtDur(d.total)}</div><div class="l">Ώρες εργασίας, ${decH(d.total)} δεκαδικά</div></div>
+    <div class="kpi"><div class="n">${fmtDur(d.bill)}</div><div class="l">Χρεώσιμες ώρες, ${decH(d.bill)} δεκαδικά</div></div>
+    <div class="kpi"><div class="n">${d.created.length} / ${d.resolved.length}</div><div class="l">Νέα / επιλυμένα tickets</div></div>
+    <div class="kpi"><div class="n">${d.slaPct == null ? "—" : d.slaPct + "%"}</div><div class="l">Επιλύσεις εντός SLA</div></div>
+  </div>
+  ${S.timeMissing ? `<div class="panel" style="margin-bottom:22px"><p class="muted" style="margin:0">Η λίστα TicketTime δεν βρέθηκε στο SharePoint, οπότε δεν υπάρχουν ώρες.</p></div>` : ""}
+  <div class="dash rp-dash">
+    <section class="panel"><h2>Ώρες ανά ημέρα<small>${period}</small></h2>${dayChart(d.ent)}</section>
+    <div class="stack">
+      <section class="panel"><h2>Ανά πελάτη</h2>${d.byClient.length ? bar(d.byClient, maxC) : `<p class="muted">Καμία καταχώρηση.</p>`}</section>
+      <section class="panel"><h2>Ανά τεχνικό</h2>${d.byTech.length ? bar(d.byTech, maxT) : `<p class="muted">Καμία καταχώρηση.</p>`}</section>
+    </div>
+  </div>
+  <section class="panel rp-sec"><h2>Ανά ticket</h2>
+    ${d.byTicket.length ? `<div class="rt-wrap"><table class="rt"><thead><tr><th>Ticket</th><th>Πελάτης</th><th class="num">Καταχωρήσεις</th><th class="num">Χρεώσιμο</th><th class="num">Ώρες</th></tr></thead><tbody>
+      ${d.byTicket.map(([id,v]) => { const t = S.tickets.find(x => x.id === +id); return `<tr data-open="${id}"><td>${esc(tTitle(id))}</td><td>${esc(t?.client || "—")}</td><td class="num">${v.n}</td><td class="num">${fmtDur(v.bill)}</td><td class="num"><b>${fmtDur(v.min)}</b></td></tr>`; }).join("")}
+      </tbody></table></div>` : `<p class="muted">Καμία καταχώρηση στην περίοδο.</p>`}
+  </section>
+  <section class="panel rp-sec"><h2>Αναλυτικά<small>${d.ent.length} καταχωρήσεις</small></h2>
+    ${d.ent.length ? `<div class="rt-wrap"><table class="rt"><thead><tr><th>Ημερομηνία</th><th>Ώρα</th><th>Ticket</th><th>Εργασία</th><th>Τεχνικός</th><th>Τύπος</th><th class="num">Διάρκεια</th></tr></thead><tbody>
+      ${d.ent.map(e => { const a = athensParts(e.start), b = athensParts(e.end); return `<tr data-open="${e.ref}"><td>${fmtDay(a.date)}</td><td class="nowrap">${a.time}–${b.time}</td><td class="nowrap">${esc(e.no)}</td><td>${esc(e.note || "—")}${R.client ? "" : `<br><small>${esc(e.client)}</small>`}</td><td>${esc(e.techName || techName(e.tech))}</td><td>${esc(e.kind)}${e.billable ? "<br><small>χρεώσιμο</small>" : ""}</td><td class="num"><b>${fmtDur(e.minutes)}</b></td></tr>`; }).join("")}
+      </tbody><tfoot><tr><td colspan="6">Σύνολο${d.bill ? `, από τα οποία χρεώσιμα ${fmtDur(d.bill)}` : ""}</td><td class="num"><b>${fmtDur(d.total)}</b></td></tr></tfoot></table></div>` : `<p class="muted">Δεν υπάρχουν καταχωρήσεις χρόνου στην περίοδο. Ο χρόνος καταγράφεται μέσα από κάθε ticket.</p>`}
+  </section>
+  <p class="print-foot">Praxis IT Solutions Ε.Ε., Σπύρου Λάμπρου 13, 11141 Αθήνα, 2104440218, info@praxisit.gr. Εκδόθηκε ${fmt(nowIso())}.</p>`;
+  m.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { R.preset = b.dataset.p; renderReports(m); });
+  const setRange = () => { R.preset = "custom"; R.from = $("#rFrom").value || R.from; R.to = $("#rTo").value || R.to; if(R.to < R.from) R.to = R.from; renderReports(m); };
+  $("#rFrom").onchange = setRange; $("#rTo").onchange = setRange;
+  $("#rClient").onchange = e => { R.client = e.target.value; renderReports(m); };
+  $("#rTech").onchange = e => { R.tech = e.target.value; renderReports(m); };
+  m.querySelectorAll("[data-open]").forEach(r => r.onclick = () => openTicket(+r.dataset.open));
+  $("#rPrint").onclick = () => window.print();
+  $("#rCsv").onclick = () => exportCsv(d);
+  bindCommon(m);
+}
+function dayChart(ent){
+  const days = []; for(let x = R.from; x <= R.to && days.length < 400; x = addDays(x, 1)) days.push(x);
+  const monthly = days.length > 62;
+  const keys = monthly ? [...new Set(days.map(x => x.slice(0,7)))] : days;
+  const tot = {}, bil = {}; ent.forEach(e => { const k = athensParts(e.start).date.slice(0, monthly ? 7 : 10); tot[k] = (tot[k] || 0) + e.minutes; if(e.billable) bil[k] = (bil[k] || 0) + e.minutes; });
+  const maxH = Math.max(1, ...keys.map(k => (tot[k] || 0) / 60)), W = 560, H = 160, pad = 26, bw = (W - pad) / keys.length;
+  const y = v => H - 18 - (v / maxH) * (H - 30);
+  const step = Math.ceil(keys.length / (monthly ? 12 : 10));
+  let s = [0, maxH/2, maxH].map(v => `<line x1="${pad}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${pad-6}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="var(--dim)">${Math.round(v*10)/10}</text>`).join("");
+  keys.forEach((k,i) => {
+    const x = pad + i*bw, h = (tot[k] || 0)/60, hb = (bil[k] || 0)/60, w = Math.max(2, bw*0.62), lab = monthly ? `${k.slice(5)}/${k.slice(2,4)}` : `${+k.slice(8)}/${+k.slice(5,7)}`;
+    if(h) s += `<rect x="${x+(bw-w)/2}" y="${y(h)}" width="${w}" height="${H-18-y(h)}" rx="2" fill="var(--primary)"><title>${monthly ? lab : fmtDay(k)}: ${fmtDur(h*60)} ώρες</title></rect>`;
+    if(hb) s += `<rect x="${x+(bw-w)/2}" y="${y(hb)}" width="${w}" height="${H-18-y(hb)}" rx="2" fill="var(--orange)"><title>${monthly ? lab : fmtDay(k)}: ${fmtDur(hb*60)} χρεώσιμες</title></rect>`;
+    if(i % step === 0) s += `<text x="${x+bw/2}" y="${H-3}" text-anchor="middle" font-size="10" fill="var(--dim)">${lab}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Ώρες εργασίας ανά ${monthly ? "μήνα" : "ημέρα"}">${s}</svg>
+    <div class="legend"><span><i style="background:var(--primary)"></i>Ώρες</span><span><i style="background:var(--orange)"></i>Χρεώσιμες</span></div>`;
+}
+function exportCsv(d){
+  const q = v => `"${String(v ?? "").replace(/"/g,'""')}"`;
+  const head = ["Ημερομηνία","Από","Έως","Λεπτά","Ώρες","Ticket","Θέμα","Πελάτης","Τεχνικός","Τύπος","Χρεώσιμο","Εργασία"];
+  const rows = d.ent.map(e => { const a = athensParts(e.start), b = athensParts(e.end), t = S.tickets.find(x => x.id === e.ref);
+    return [fmtDay(a.date), a.time, b.time, e.minutes, decH(e.minutes), e.no, t?.title || "", e.client, e.techName || techName(e.tech), e.kind, e.billable ? "Ναι" : "Όχι", e.note]; });
+  const csv = "﻿" + [head, ...rows].map(r => r.map(q).join(";")).join("\r\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" }));
+  a.download = `praxis-ores-${(R.client || "oloi").replace(/[^\wͰ-Ͽ]+/g,"-")}-${R.from}-${R.to}.csv`;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+
 /* ================= modal ================= */
 function modal(title, html, onSave, extra){
   $("#layer").innerHTML = `<div class="overlay" id="mov"></div><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><header id="mt">${esc(title)}</header>
@@ -928,7 +1260,7 @@ function route(){
   const h = location.hash;
   const m = h.match(/^#t(\d+)$/);
   if(m && S.tickets.some(t => t.id === +m[1])){ openTicket(+m[1], false); return; }
-  S.open = null; S.view = ["dash","tickets","clients"].includes(h.slice(1)) ? h.slice(1) : "dash"; render();
+  S.open = null; S.view = ["dash","tickets","clients","reports"].includes(h.slice(1)) ? h.slice(1) : "dash"; render();
 }
 function gate(inner){ $("#root").innerHTML = `<div class="gate"><div class="card"><div class="logo">Praxis<b>IT</b><span>Tickets</span></div>${inner}</div></div>`; }
 async function boot(){
