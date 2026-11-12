@@ -515,6 +515,7 @@ function sysText(b){
   if((m = b.match(/^Κατάσταση: (.+) → (.+)$/))) return `Status: ${L(m[1])} → ${L(m[2])}`;
   if((m = b.match(/^Ανάθεση: (.+)$/))) return `Assigned: ${L(m[1])}`;
   if((m = b.match(/^Τύπος: (.+)$/))) return `Type: ${L(m[1])}`;
+  if((m = b.match(/^Πελάτης: (.+) → (.+)$/))) return `Customer: ${m[1]} → ${m[2]}`;
   if((m = b.match(/^Κατηγορία: (.+)$/))) return `Category: ${L(m[1])}`;
   if((m = b.match(/^Επίπτωση (.+), επείγον (.+), προτεραιότητα (.+)$/))) return `Impact ${L(m[1])}, urgency ${L(m[2])}, priority ${L(m[3])}`;
   if((m = b.match(/^Προτεραιότητα: (.+) → (.+?) \((.*)\)$/))) return `Priority: ${L(m[1])} → ${L(m[2])} (${m[3]})`;
@@ -1132,7 +1133,7 @@ function renderTicket(m){
         <div><label for="p-type">Τύπος</label><select class="field" id="p-type">${opt(TYPES, t.type)}</select></div>
         <div><label for="p-cat">Κατηγορία</label><select class="field" id="p-cat">${opt(["", ...CATEGORIES], t.category)}</select></div>
       </div></div>
-      <div class="prop"><span class="k">Πελάτης</span><div class="v">${esc(t.client || "—")}<br><span style="color:var(--dim);font-size:13px">${esc(L(t.tier || "Χωρίς σύμβαση"))}${cl?.phone ? `, ${esc(cl.phone)}` : ""}${cl?.lang === "EN" ? `<br>${T("Τα email του πηγαίνουν στα αγγλικά","Emails to this customer go out in English")}` : ""}</span></div></div>
+      <div class="prop"><label for="p-client">Πελάτης</label><select class="field" id="p-client" translate="no">${opt([["","—"], ...[...new Set([...S.clients.map(c => c.name), ...(t.client ? [t.client] : [])])].sort((a,b) => a.localeCompare(b,"el")).map(n => [n, n])], t.client || "")}</select><div class="v" style="margin-top:6px"><span style="color:var(--dim);font-size:13px">${esc(L(t.tier || "Χωρίς σύμβαση"))}${cl?.phone ? `, ${esc(cl.phone)}` : ""}${cl?.lang === "EN" ? `<br>${T("Τα email του πηγαίνουν στα αγγλικά","Emails to this customer go out in English")}` : ""}</span></div></div>
       <div class="prop"><span class="k">Αιτών</span><div class="v">${esc(t.reqName || "—")}${t.reqEmail ? `<br><a href="mailto:${esc(t.reqEmail)}">${esc(t.reqEmail)}</a>` : ""}</div></div>
       <div class="prop"><span class="k">SLA</span><div class="v" style="font-size:13px">
         ${T("Απόκριση έως","Response by")} ${fmt(t.due)}${t.firstResp ? `, ${T("απαντήθηκε","answered")} ${fmt(t.firstResp)}` : ""}<br>
@@ -1184,6 +1185,7 @@ function bindProps(){
   };
   $("#p-tech").onchange = e => { const v = e.target.value; const p = { tech:v }; if(v && t.status === "Νέο") Object.assign(p, statusPatch(t, "Ανατέθηκε")); changeTicket(p, `Ανάθεση: ${techName(v)}`); };
   $("#p-type").onchange = e => changeTicket({ type:e.target.value }, `Τύπος: ${e.target.value}`);
+  $("#p-client").onchange = e => changeClient(t, e.target.value);
   $("#p-cat").onchange = e => changeTicket({ category:e.target.value }, `Κατηγορία: ${e.target.value || "—"}`);
   const reprio = (impact, urgency) => {
     const p = MATRIX[impact][urgency];
@@ -1227,6 +1229,15 @@ async function changeTicket(patch, logText){
   t.last = nowIso();
   if(logText) await logEvent(logText);
   render(); toast("Αποθηκεύτηκε");
+}
+async function changeClient(t, name){
+  const c = S.clients.find(x => x.name === name), tier = c ? c.tier : "Χωρίς σύμβαση", old = t.client || "—";
+  const dd = dueDates(t.created, tier, c?.sla, t.priority);
+  const patch = { client:name, tier, resolveDue:dd.resolveDue, resolveAlerted:false };
+  if(!t.firstResp){ patch.due = dd.due; patch.slaAlerted = false; }
+  await changeTicket(patch, `Πελάτης: ${old} → ${name || "—"}`);
+  const rows = S.time.filter(e => e.ref === t.id && e.client !== name);
+  for(const e of rows){ const ok = await guard(async () => { await API.updateTime(e.id, { ...e, client:name }); return true; }); if(ok) e.client = name; }
 }
 async function deleteTicket(t){
   const b = $("#delTicket");
