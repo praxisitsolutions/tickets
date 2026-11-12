@@ -397,7 +397,7 @@ const EN = {
   "Επιλύθηκε":"Resolved","Κλειστό":"Closed",
   "P1 Κρίσιμο":"P1 Critical","P2 Υψηλό":"P2 High","P3 Κανονικό":"P3 Normal","P4 Χαμηλό":"P4 Low",
   "Κρίσιμο":"Critical","Υψηλό":"High","Κανονικό":"Normal","Χαμηλό":"Low",
-  "Περιστατικό":"Incident","Αίτημα υπηρεσίας":"Service request","Πρόβλημα":"Problem","Αλλαγή":"Change","Επιτόπια υποστήριξη":"Onsite support","Project":"Project",
+  "Περιστατικό":"Incident","Αίτημα υπηρεσίας":"Service request","Πρόβλημα":"Problem","Αλλαγή":"Change","Οι απαντήσεις σας με email πηγαίνουν σε αυτή τη διεύθυνση.":"Your email replies go to this address.","Το email δεν είναι σωστό.":"The email address is not valid.","Συμπλήρωσε email ή όνομα.":"Enter an email or a name.","Επιτόπια υποστήριξη":"Onsite support","Project":"Project",
   "Υψηλή":"High","Μεσαία":"Medium","Χαμηλή":"Low",
   "όλη η επιχείρηση ή πολλοί χρήστες":"whole business or many users","ένα τμήμα ή μια ομάδα":"one department or team","ένας χρήστης":"one user",
   "η δουλειά έχει σταματήσει":"work has stopped","δυσκολεύει τη δουλειά":"work is harder","μπορεί να περιμένει":"can wait",
@@ -516,6 +516,7 @@ function sysText(b){
   if((m = b.match(/^Ανάθεση: (.+)$/))) return `Assigned: ${L(m[1])}`;
   if((m = b.match(/^Τύπος: (.+)$/))) return `Type: ${L(m[1])}`;
   if((m = b.match(/^Πελάτης: (.+) → (.+)$/))) return `Customer: ${m[1]} → ${m[2]}`;
+  if((m = b.match(/^Αιτών: (.+) → (.+)$/))) return `Requester: ${m[1]} → ${m[2]}`;
   if((m = b.match(/^Κατηγορία: (.+)$/))) return `Category: ${L(m[1])}`;
   if((m = b.match(/^Επίπτωση (.+), επείγον (.+), προτεραιότητα (.+)$/))) return `Impact ${L(m[1])}, urgency ${L(m[2])}, priority ${L(m[3])}`;
   if((m = b.match(/^Προτεραιότητα: (.+) → (.+?) \((.*)\)$/))) return `Priority: ${L(m[1])} → ${L(m[2])} (${m[3]})`;
@@ -1134,7 +1135,7 @@ function renderTicket(m){
         <div><label for="p-cat">Κατηγορία</label><select class="field" id="p-cat">${opt(["", ...CATEGORIES], t.category)}</select></div>
       </div></div>
       <div class="prop"><label for="p-client">Πελάτης</label><select class="field" id="p-client" translate="no">${opt([["","—"], ...[...new Set([...S.clients.map(c => c.name), ...(t.client ? [t.client] : [])])].sort((a,b) => a.localeCompare(b,"el")).map(n => [n, n])], t.client || "")}</select><div class="v" style="margin-top:6px"><span style="color:var(--dim);font-size:13px">${esc(L(t.tier || "Χωρίς σύμβαση"))}${cl?.phone ? `, ${esc(cl.phone)}` : ""}${cl?.lang === "EN" ? `<br>${T("Τα email του πηγαίνουν στα αγγλικά","Emails to this customer go out in English")}` : ""}</span></div></div>
-      <div class="prop"><span class="k">Αιτών</span><div class="v">${esc(t.reqName || "—")}${t.reqEmail ? `<br><a href="mailto:${esc(t.reqEmail)}">${esc(t.reqEmail)}</a>` : ""}</div></div>
+      <div class="prop" id="reqBox"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="k">Αιτών</span><button class="btn quiet" id="p-req-edit" style="padding:2px 10px;min-height:0;font-size:13px">Αλλαγή</button></div><div class="v">${esc(t.reqName || "—")}${t.reqEmail ? `<br><a href="mailto:${esc(t.reqEmail)}">${esc(t.reqEmail)}</a>` : ""}</div></div>
       <div class="prop"><span class="k">SLA</span><div class="v" style="font-size:13px">
         ${T("Απόκριση έως","Response by")} ${fmt(t.due)}${t.firstResp ? `, ${T("απαντήθηκε","answered")} ${fmt(t.firstResp)}` : ""}<br>
         ${T("Επίλυση έως","Resolution by")} ${fmt(t.resolveDue)}${t.resolved ? `, ${T("επιλύθηκε","resolved")} ${fmt(t.resolved)}` : ""}
@@ -1186,6 +1187,7 @@ function bindProps(){
   $("#p-tech").onchange = e => { const v = e.target.value; const p = { tech:v }; if(v && t.status === "Νέο") Object.assign(p, statusPatch(t, "Ανατέθηκε")); changeTicket(p, `Ανάθεση: ${techName(v)}`); };
   $("#p-type").onchange = e => changeTicket({ type:e.target.value }, `Τύπος: ${e.target.value}`);
   $("#p-client").onchange = e => changeClient(t, e.target.value);
+  $("#p-req-edit").onclick = () => editRequester(t);
   $("#p-cat").onchange = e => changeTicket({ category:e.target.value }, `Κατηγορία: ${e.target.value || "—"}`);
   const reprio = (impact, urgency) => {
     const p = MATRIX[impact][urgency];
@@ -1238,6 +1240,30 @@ async function changeClient(t, name){
   await changeTicket(patch, `Πελάτης: ${old} → ${name || "—"}`);
   const rows = S.time.filter(e => e.ref === t.id && e.client !== name);
   for(const e of rows){ const ok = await guard(async () => { await API.updateTime(e.id, { ...e, client:name }); return true; }); if(ok) e.client = name; }
+}
+function editRequester(t){
+  const known = new Map();
+  S.tickets.filter(x => x.client === t.client && x.reqEmail).forEach(x => { const k = x.reqEmail.toLowerCase(); if(!known.has(k)) known.set(k, x.reqName || ""); });
+  $("#reqBox").innerHTML = `<label for="p-req-email">Email αιτούντος</label>
+    <input class="field" id="p-req-email" type="email" list="reqList" value="${esc(t.reqEmail || "")}" autocomplete="off">
+    <datalist id="reqList">${[...known].map(([e, n]) => `<option value="${esc(e)}">${esc(n)}</option>`).join("")}</datalist>
+    <label for="p-req-name" style="margin-top:8px">Όνομα αιτούντος</label>
+    <input class="field" id="p-req-name" value="${esc(t.reqName || "")}">
+    <div class="computed">Οι απαντήσεις σας με email πηγαίνουν σε αυτή τη διεύθυνση.</div>
+    <div style="display:flex;gap:8px;margin-top:8px"><button class="btn" id="p-req-ok">Αποθήκευση</button><button class="btn quiet" id="p-req-x">Άκυρο</button></div>`;
+  const em = $("#p-req-email"), nm = $("#p-req-name");
+  em.focus();
+  em.oninput = () => { const n = known.get(em.value.trim().toLowerCase()); if(n && !nm.value.trim()) nm.value = n; };
+  em.onchange = () => { const n = known.get(em.value.trim().toLowerCase()); if(n) nm.value = n; };
+  $("#p-req-x").onclick = () => render();
+  $("#p-req-ok").onclick = () => {
+    const e = em.value.trim(), n = nm.value.trim();
+    if(e && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return toast("Το email δεν είναι σωστό.", true);
+    if(!e && !n) return toast("Συμπλήρωσε email ή όνομα.", true);
+    if(e === (t.reqEmail || "") && n === (t.reqName || "")) return render();
+    const old = t.reqName || t.reqEmail || "—";
+    changeTicket({ reqEmail:e, reqName:n }, `Αιτών: ${old} → ${n || e}`);
+  };
 }
 async function deleteTicket(t){
   const b = $("#delTicket");
